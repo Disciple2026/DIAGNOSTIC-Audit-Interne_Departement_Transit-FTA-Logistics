@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Diagnostic Département Transit — FTA Logistics</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Cairo:wght@400;500;600;700&display=swap');
+
+:root{
+  --ink:#1a1a1a; --paper:#f6f3ea; --paper-line:#e3ddc9;
+  --navy:#1d2b3a; --navy-soft:#2a3d52; --teal:#2f6f62; --teal-soft:#e4ede9;
+  --amber:#c1852f; --line:#d8d2c2; --danger:#a13d2b;
+}
+*{box-sizing:border-box;}
+html{ scroll-behavior:smooth; }
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font-family:'IBM Plex Sans', sans-serif; font-size:15.5px; line-height:1.55;
+  background-image:repeating-linear-gradient(0deg, transparent, transparent 39px, var(--paper-line) 39px, var(--paper-line) 40px);
+}
+html[dir="rtl"] body, html[dir="rtl"] input, html[dir="rtl"] textarea, html[dir="rtl"] select, html[dir="rtl"] button{
+  font-family:'Cairo', 'IBM Plex Sans', sans-serif;
+}
+html[dir="rtl"] h1, html[dir="rtl"] h2, html[dir="rtl"] .eyebrow, html[dir="rtl"] .stamp, html[dir="rtl"] .ref-key, html[dir="rtl"] button.submit, html[dir="rtl"] .confirm .badge{
+  font-family:'Cairo', 'Oswald', sans-serif;
+}
+.watermark{ position:fixed; inset:0; pointer-events:none; z-index:0; overflow:hidden; opacity:0.035; }
+.watermark span{ position:absolute; font-family:'Oswald', sans-serif; font-size:120px; font-weight:700; color:var(--navy); white-space:nowrap; transform:rotate(-28deg); letter-spacing:4px; }
+.sheet{ position:relative; z-index:1; max-width:800px; margin:0 auto; padding:0 20px 80px; }
+
+/* language switcher */
+.lang-switch{ display:flex; justify-content:flex-end; gap:6px; padding:16px 0 0; }
+.lang-switch button{
+  font-family:'IBM Plex Mono', monospace; font-size:11.5px; letter-spacing:0.5px;
+  border:1px solid var(--line); background:#fffdf8; color:var(--navy-soft);
+  padding:6px 12px; border-radius:20px; cursor:pointer; transition:all .15s ease;
+}
+.lang-switch button:hover{ border-color:var(--teal); color:var(--teal); }
+.lang-switch button.active{ background:var(--navy); color:#fdfbf5; border-color:var(--navy); }
+
+header{ padding:20px 0 22px; border-bottom:3px solid var(--navy); margin-bottom:8px; animation: headerIn .6s ease both; }
+@keyframes headerIn{ from{ opacity:0; transform:translateY(-8px); } to{ opacity:1; transform:translateY(0); } }
+.doc-ref{ display:flex; justify-content:space-between; align-items:flex-start; gap:16px; margin-bottom:22px; }
+.doc-ref .left{ font-family:'IBM Plex Mono', monospace; font-size:11px; color:var(--navy-soft); letter-spacing:0.5px; }
+.doc-ref .left div:first-child{ font-weight:500; color:var(--ink); }
+.stamp{ border:2px solid var(--amber); color:var(--amber); font-family:'Oswald', sans-serif; font-size:11px; font-weight:600; letter-spacing:1.5px; padding:6px 10px; transform:rotate(4deg); border-radius:3px; white-space:nowrap; text-transform:uppercase; animation: stampIn .5s cubic-bezier(.34,1.56,.64,1) .3s both; }
+@keyframes stampIn{ from{ opacity:0; transform:rotate(-14deg) scale(0.7); } to{ opacity:1; transform:rotate(4deg) scale(1); } }
+h1{ font-family:'Oswald', sans-serif; font-size:29px; font-weight:700; letter-spacing:0.3px; color:var(--navy); margin:0 0 6px; text-transform:uppercase; }
+html[dir="rtl"] h1{ text-transform:none; }
+.subtitle{ font-size:14.5px; color:#3c3c3c; max-width:64ch; }
+.meta-note{ margin-top:16px; font-size:13px; color:var(--teal); background:var(--teal-soft); border-left:3px solid var(--teal); padding:10px 14px; border-radius:2px; }
+html[dir="rtl"] .meta-note{ border-left:none; border-right:3px solid var(--teal); }
+.time-inline{ font-family:'IBM Plex Mono', monospace; color:#5a8a7d; white-space:nowrap; }
+.progress-track{ position:sticky; top:0; z-index:5; height:4px; background:var(--line); margin-bottom:26px; }
+.progress-fill{ height:100%; width:0%; background:linear-gradient(90deg, var(--teal), #3a8272); transition:width .2s ease; }
+
+.toc{ background:#fffdf8; border:1px solid var(--line); border-radius:4px; padding:16px 18px; margin-bottom:36px; font-size:12.5px; }
+.toc-title{ font-family:'Oswald', sans-serif; font-size:11px; letter-spacing:1.5px; text-transform:uppercase; color:var(--navy-soft); margin-bottom:8px; }
+html[dir="rtl"] .toc-title{ font-family:'Cairo',sans-serif; text-transform:none; letter-spacing:0; }
+.toc ol{ columns:2; margin:0; padding-left:18px; color:#555; }
+html[dir="rtl"] .toc ol{ padding-left:0; padding-right:18px; }
+.toc li{ margin-bottom:4px; }
+.toc a{ color:#555; text-decoration:none; }
+.toc a:hover{ color:var(--teal); text-decoration:underline; }
+@media (max-width:600px){ .toc ol{ columns:1; } }
+
+section.block{ margin-bottom:44px; padding-top:6px; scroll-margin-top:24px; opacity:0; transform:translateY(14px); transition:opacity .5s ease, transform .5s ease; }
+section.block.in-view{ opacity:1; transform:translateY(0); }
+.eyebrow{ display:flex; align-items:center; gap:10px; font-family:'Oswald', sans-serif; font-size:12.5px; font-weight:600; letter-spacing:2px; color:var(--teal); text-transform:uppercase; margin-bottom:6px; }
+html[dir="rtl"] .eyebrow{ text-transform:none; letter-spacing:0; }
+.eyebrow::before{ content:""; width:22px; height:2px; background:var(--amber); display:inline-block; transform-origin:left center; transform:scaleX(0); transition:transform .5s ease .15s; }
+html[dir="rtl"] .eyebrow::before{ transform-origin:right center; }
+section.block.in-view .eyebrow::before{ transform:scaleX(1); }
+.block h2{ font-family:'Oswald', sans-serif; font-size:20px; font-weight:600; color:var(--navy); margin:0 0 4px; }
+.block .desc{ font-size:13.5px; color:#555; margin-bottom:18px; }
+
+.field{ margin-bottom:20px; }
+.field label.q{ display:block; font-weight:600; font-size:14.5px; color:var(--ink); margin-bottom:8px; }
+.hint{ font-size:12px; color:#7a7a7a; }
+.req{ color:var(--danger); font-weight:600; }
+
+input[type=text], textarea, select{ width:100%; font-family:'IBM Plex Sans', sans-serif; font-size:14px; padding:9px 11px; border:1px solid var(--line); border-radius:3px; background:#fffdf8; color:var(--ink); transition:border-color .15s ease, box-shadow .15s ease; }
+textarea{ resize:vertical; min-height:66px; }
+input[type=text]:focus, textarea:focus, select:focus{ outline:none; border-color:var(--teal); box-shadow:0 0 0 3px var(--teal-soft); }
+.options{ display:flex; flex-direction:column; gap:7px; }
+.opt{ display:flex; align-items:center; gap:9px; font-size:14px; padding:8px 9px; border-radius:4px; cursor:pointer; transition:background .15s ease, transform .12s ease; }
+.opt:hover{ background:var(--teal-soft); }
+.opt:has(input:checked){ background:var(--teal-soft); animation: optPulse .28s ease; }
+@keyframes optPulse{ 0%{ transform:scale(1); } 40%{ transform:scale(1.015); } 100%{ transform:scale(1); } }
+.opt input{ accent-color:var(--teal); width:16px; height:16px; flex:none; }
+.opt .other-input{ margin-left:6px; flex:1; }
+html[dir="rtl"] .opt .other-input{ margin-left:0; margin-right:6px; }
+
+.matrix{ width:100%; border-collapse:collapse; font-size:13px; margin-top:6px; }
+.matrix th{ font-family:'Oswald', sans-serif; font-weight:500; font-size:10.5px; letter-spacing:0.4px; text-transform:uppercase; color:var(--navy-soft); padding:6px 3px; border-bottom:2px solid var(--navy); text-align:center; }
+html[dir="rtl"] .matrix th{ text-transform:none; letter-spacing:0; }
+.matrix th:first-child{ text-align:left; }
+html[dir="rtl"] .matrix th:first-child{ text-align:right; }
+.matrix td{ padding:8px 3px; border-bottom:1px solid var(--line); text-align:center; }
+.matrix td:first-child{ text-align:left; font-weight:500; font-family:'IBM Plex Mono', monospace; font-size:12px; }
+html[dir="rtl"] .matrix td:first-child{ text-align:right; }
+.matrix input{ accent-color:var(--teal); width:16px; height:16px; }
+.matrix select{ padding:5px 3px; font-size:12px; text-align:center; }
+.matrix-wrap{ overflow-x:auto; }
+
+.scale{ display:flex; gap:8px; flex-wrap:wrap; }
+.scale label{ display:flex; align-items:center; gap:6px; font-size:13px; border:1px solid var(--line); padding:7px 12px; border-radius:20px; cursor:pointer; transition:background .15s ease, border-color .15s ease, transform .12s ease; }
+.scale label:hover{ transform:translateY(-1px); border-color:var(--teal); }
+.scale input{ accent-color:var(--teal); }
+.scale label:has(input:checked){ background:var(--navy); color:#fff; border-color:var(--navy); animation: optPulse .28s ease; }
+
+.error-msg{ color:var(--danger); font-size:12.5px; margin-top:6px; display:none; }
+.field.invalid .error-msg{ display:block; }
+.field.invalid label.q{ color:var(--danger); }
+
+.submit-row{ margin-top:44px; padding-top:24px; border-top:3px solid var(--navy); display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
+button.submit{ font-family:'Oswald', sans-serif; font-size:15px; font-weight:600; letter-spacing:0.5px; text-transform:uppercase; background:var(--navy); color:#fdfbf5; border:none; padding:14px 30px; border-radius:3px; cursor:pointer; box-shadow:0 2px 0 rgba(29,43,58,0.25); transition:background .15s ease, transform .1s ease, box-shadow .15s ease; }
+html[dir="rtl"] button.submit{ text-transform:none; letter-spacing:0; }
+button.submit:hover{ background:var(--navy-soft); transform:translateY(-1px); box-shadow:0 4px 10px rgba(29,43,58,0.22); }
+button.submit:active{ transform:translateY(0); box-shadow:0 1px 0 rgba(29,43,58,0.25); }
+button.submit:disabled{ opacity:0.6; cursor:wait; transform:none; box-shadow:none; }
+.submit-hint{ font-size:12.5px; color:#777; }
+
+.confirm{ display:none; text-align:center; padding:60px 20px; }
+.confirm.show{ display:block; }
+.confirm .badge{ display:inline-block; border:3px solid var(--teal); color:var(--teal); font-family:'Oswald', sans-serif; font-size:15px; font-weight:700; letter-spacing:2px; text-transform:uppercase; padding:12px 26px; border-radius:4px; transform:rotate(-3deg); margin-bottom:20px; animation: badgePop .5s cubic-bezier(.34,1.56,.64,1) both; }
+html[dir="rtl"] .confirm .badge{ text-transform:none; letter-spacing:0; }
+@keyframes badgePop{ from{ opacity:0; transform:rotate(-3deg) scale(0.6); } to{ opacity:1; transform:rotate(-3deg) scale(1); } }
+.confirm h2{ font-family:'Oswald', sans-serif; color:var(--navy); font-size:22px; margin-bottom:8px; animation: fadeUp .5s ease .15s both; }
+.confirm p{ color:#555; max-width:52ch; margin:0 auto; animation: fadeUp .5s ease .25s both; }
+.confirm .err{ color:var(--danger); margin-top:16px; font-size:13px; display:none; }
+@keyframes fadeUp{ from{ opacity:0; transform:translateY(8px); } to{ opacity:1; transform:translateY(0); } }
+form.hidden{ display:none; }
+@media (max-width:600px){ h1{ font-size:22px; } .doc-ref{ flex-direction:column; } .matrix{ font-size:10.5px; } }
+</style>
+</head>
+<body>
+
+<div class="watermark" id="watermark"></div>
+
+<div class="sheet">
+  <div class="lang-switch" role="group" aria-label="Langue / Language / اللغة">
+    <button type="button" data-lang="fr">FR</button>
+    <button type="button" data-lang="en">EN</button>
+    <button type="button" data-lang="ar">AR</button>
+  </div>
+
+  <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+
+  <header>
+    <div class="doc-ref">
+      <div class="left">
+        <div><span data-i18n="meta.docref">Réf. dossier :</span> <span id="docRef">TR-2026-0000</span></div>
+        <div data-i18n="meta.dept">Département Transit — FTA Logistics</div>
+      </div>
+      <div class="stamp" data-i18n="meta.stamp">Usage interne</div>
+    </div>
+    <h1 data-i18n="title">Diagnostic du département Transit</h1>
+    <p class="subtitle" data-i18n="subtitle">Ce questionnaire recense les problèmes, risques et frictions récurrents du service — avec les autres départements et partenaires externes — pour prioriser objectivement les axes d'amélioration.</p>
+    <div class="meta-note"><span data-i18n="meta.note">Répondez selon votre expérience réelle du terrain. Vos réponses sont confidentielles et consultables uniquement par la personne menant ce diagnostic.</span> <span class="time-inline" data-i18n="meta.time">· 15–20 min</span></div>
+  </header>
+
+  <div class="toc">
+    <div class="toc-title" data-i18n="toc.title">Sommaire</div>
+    <ol>
+      <li><a href="#s1" data-i18n="toc.s1">Profil</a></li>
+      <li><a href="#s2" data-i18n="toc.s2">Fonctionnement quotidien</a></li>
+      <li><a href="#s3" data-i18n="toc.s3">Gestion des dossiers</a></li>
+      <li><a href="#s4" data-i18n="toc.s4">Outils informatiques</a></li>
+      <li><a href="#s5" data-i18n="toc.s5">Risques &amp; grille d'évaluation</a></li>
+      <li><a href="#s6" data-i18n="toc.s6">Interactions inter-départements</a></li>
+      <li><a href="#s7" data-i18n="toc.s7">Acteurs externes</a></li>
+      <li><a href="#s8" data-i18n="toc.s8">Pilotage plateforme logistique</a></li>
+      <li><a href="#s9" data-i18n="toc.s9">Performance</a></li>
+      <li><a href="#s10" data-i18n="toc.s10">Amélioration continue</a></li>
+      <li><a href="#s11" data-i18n="toc.s11">Identification (facultatif)</a></li>
+    </ol>
+  </div>
+
+  <form id="surveyForm">
+
+    <section class="block" id="s1">
+      <div class="eyebrow" data-i18n="eyebrow.s01">Section 01</div>
+      <h2 data-i18n="s1.h2">Votre profil dans le département</h2>
+      <p class="desc" data-i18n="s1.desc">Quelques repères pour contextualiser vos réponses.</p>
+
+      <div class="field"><label class="q" data-i18n="s1.q1">Quel est votre poste au sein du département Transit ?</label>
+        <input type="text" id="poste" data-i18n-ph="s1.q1.ph" placeholder="ex. Agent transit, Chargé de dédouanement..."></div>
+
+      <div class="field"><label class="q" data-i18n="s1.q2">Depuis combien de temps travaillez-vous chez FTA Logistics ?</label>
+        <select id="anciennete">
+          <option value="" data-i18n="common.select">— Sélectionner —</option>
+          <option value="Moins d'un an" data-i18n="s1.q2.o1">Moins d'un an</option>
+          <option value="1 à 3 ans" data-i18n="s1.q2.o2">1 à 3 ans</option>
+          <option value="3 à 5 ans" data-i18n="s1.q2.o3">3 à 5 ans</option>
+          <option value="Plus de 5 ans" data-i18n="s1.q2.o4">Plus de 5 ans</option>
+        </select>
+      </div>
+
+      <div class="field" id="field-activites">
+        <label class="q"><span data-i18n="s1.q3">Dans quelles activités intervenez-vous principalement ?</span> <span class="req">*</span></label>
+        <div class="options" data-group="activites">
+          <label class="opt"><input type="checkbox" value="Import"><span class="mark"></span><span data-i18n="s1.q3.o1">Import</span></label>
+          <label class="opt"><input type="checkbox" value="Export"><span class="mark"></span><span data-i18n="s1.q3.o2">Export</span></label>
+          <label class="opt"><input type="checkbox" value="Dédouanement"><span class="mark"></span><span data-i18n="s1.q3.o3">Dédouanement</span></label>
+          <label class="opt"><input type="checkbox" value="Stockage libre"><span class="mark"></span><span data-i18n="s1.q3.o4">Stockage libre</span></label>
+          <label class="opt"><input type="checkbox" value="Gestion de la plateforme logistique"><span class="mark"></span><span data-i18n="s1.q3.o5">Gestion de la plateforme logistique</span></label>
+          <label class="opt"><input type="checkbox" value="Transport"><span class="mark"></span><span data-i18n="s1.q3.o6">Transport</span></label>
+          <label class="opt"><input type="checkbox" value="Relation client"><span class="mark"></span><span data-i18n="s1.q3.o7">Relation client</span></label>
+          <label class="opt"><input type="checkbox" class="other-check" value="Autre"><span class="mark"></span><span data-i18n="common.other">Autre :</span> <input type="text" class="other-input" data-i18n-ph="common.specify" placeholder="précisez"></label>
+        </div>
+        <div class="error-msg" data-i18n="s1.q3.err">Merci de cocher au moins une réponse.</div>
+      </div>
+    </section>
+
+    <section class="block" id="s2">
+      <div class="eyebrow" data-i18n="eyebrow.s02">Section 02</div>
+      <h2 data-i18n="s2.h2">Fonctionnement quotidien</h2>
+      <p class="desc" data-i18n="s2.desc">Votre travail au jour le jour et sa charge.</p>
+
+      <div class="field"><label class="q" data-i18n="s2.q1">Pouvez-vous décrire les principales étapes de votre travail quotidien ?</label>
+        <textarea id="etapesQuotidien" data-i18n-ph="s2.q1.ph" placeholder="ex. réception des dossiers, vérification des documents, saisie sur Odoo..."></textarea></div>
+
+      <div class="field"><label class="q" data-i18n="s2.q2">Selon vous, quelles tâches prennent le plus de temps ?</label><textarea id="tachesChronophages"></textarea></div>
+
+      <div class="field" id="field-tachesErreurs"><label class="q" data-i18n="s2.q3">Quelles tâches génèrent le plus d'erreurs ou de difficultés ?</label>
+        <div class="options" data-group="tachesErreurs">
+          <label class="opt"><input type="checkbox" value="Saisie des dossiers"><span data-i18n="s2.q3.o1">Saisie des dossiers</span></label>
+          <label class="opt"><input type="checkbox" value="Vérification documentaire"><span data-i18n="s2.q3.o2">Vérification documentaire</span></label>
+          <label class="opt"><input type="checkbox" value="Calcul des droits et taxes"><span data-i18n="s2.q3.o3">Calcul des droits et taxes</span></label>
+          <label class="opt"><input type="checkbox" value="Suivi des dossiers en douane"><span data-i18n="s2.q3.o4">Suivi des dossiers en douane</span></label>
+          <label class="opt"><input type="checkbox" value="Communication avec les transporteurs"><span data-i18n="s2.q3.o5">Communication avec les transporteurs</span></label>
+          <label class="opt"><input type="checkbox" value="Coordination avec l'entrepôt"><span data-i18n="s2.q3.o6">Coordination avec l'entrepôt</span></label>
+          <label class="opt"><input type="checkbox" value="Facturation"><span data-i18n="s2.q3.o7">Facturation</span></label>
+          <label class="opt"><input type="checkbox" class="other-check" value="Autre"><span data-i18n="common.other">Autre :</span> <input type="text" class="other-input" data-i18n-ph="common.specify" placeholder="précisez"></label>
+        </div>
+      </div>
+
+      <div class="field"><label class="q" data-i18n="s2.q4">Quelles activités pourraient être simplifiées ou automatisées ?</label><textarea id="tachesAutomatiser"></textarea></div>
+
+      <div class="field" id="field-periodesCharge"><label class="q" data-i18n="s2.q5">À quelles périodes la charge de travail devient-elle la plus importante ?</label>
+        <div class="options" data-group="periodesCharge">
+          <label class="opt"><input type="checkbox" value="Fin de mois"><span data-i18n="s2.q5.o1">Fin de mois</span></label>
+          <label class="opt"><input type="checkbox" value="Fin d'année"><span data-i18n="s2.q5.o2">Fin d'année</span></label>
+          <label class="opt"><input type="checkbox" value="Périodes de pointe import / export saisonnières"><span data-i18n="s2.q5.o3">Périodes de pointe import / export saisonnières</span></label>
+          <label class="opt"><input type="checkbox" value="Urgences douanières"><span data-i18n="s2.q5.o4">Urgences douanières</span></label>
+          <label class="opt"><input type="checkbox" class="other-check" value="Autre"><span data-i18n="common.other">Autre :</span> <input type="text" class="other-input" data-i18n-ph="common.specify" placeholder="précisez"></label>
+        </div>
+      </div>
+    </section>
+
+    <section class="block" id="s3">
+      <div class="eyebrow" data-i18n="eyebrow.s03">Section 03</div>
+      <h2 data-i18n="s3.h2">Gestion des dossiers</h2>
+      <p class="desc" data-i18n="s3.desc">Import, export, stockage libre, dédouanement.</p>
+
+      <div class="field"><label class="q" data-i18n="s3.q1">Lors du traitement des dossiers Import ou Export, quels sont les problèmes les plus fréquents ?</label><textarea id="problemesImportExport"></textarea></div>
+
+      <div class="field" id="field-etapeBlocage"><label class="q" data-i18n="s3.q2">À quelle étape les dossiers sont-ils le plus souvent bloqués ?</label>
+        <div class="options" data-group="etapeBlocage" data-radio="true">
+          <label class="opt"><input type="radio" name="etapeBlocage" value="Constitution du dossier"><span data-i18n="s3.q2.o1">Constitution du dossier</span></label>
+          <label class="opt"><input type="radio" name="etapeBlocage" value="Obtention des documents"><span data-i18n="s3.q2.o2">Obtention des documents</span></label>
+          <label class="opt"><input type="radio" name="etapeBlocage" value="Calcul des droits / taxes"><span data-i18n="s3.q2.o3">Calcul des droits / taxes</span></label>
+          <label class="opt"><input type="radio" name="etapeBlocage" value="Passage en douane"><span data-i18n="s3.q2.o4">Passage en douane</span></label>
+          <label class="opt"><input type="radio" name="etapeBlocage" value="Livraison finale"><span data-i18n="s3.q2.o5">Livraison finale</span></label>
+          <label class="opt"><input type="radio" name="etapeBlocage" class="other-check" value="Autre"><span data-i18n="common.other">Autre :</span> <input type="text" class="other-input" data-i18n-ph="common.specify" placeholder="précisez"></label>
+        </div>
+      </div>
+
+      <div class="field" id="field-causesRetard"><label class="q" data-i18n="s3.q3">Quelles sont les principales causes de retard dans le traitement des dossiers ?</label>
+        <div class="options" data-group="causesRetard">
+          <label class="opt"><input type="checkbox" value="Documents manquants"><span data-i18n="s3.q3.o1">Documents manquants</span></label>
+          <label class="opt"><input type="checkbox" value="Erreur de saisie"><span data-i18n="s3.q3.o2">Erreur de saisie</span></label>
+          <label class="opt"><input type="checkbox" value="Lenteur du système"><span data-i18n="s3.q3.o3">Lenteur du système</span></label>
+          <label class="opt"><input type="checkbox" value="Attente réponse douane"><span data-i18n="s3.q3.o4">Attente réponse douane</span></label>
+          <label class="opt"><input type="checkbox" value="Attente réponse client"><span data-i18n="s3.q3.o5">Attente réponse client</span></label>
+          <label class="opt"><input type="checkbox" value="Problème de paiement / taxes"><span data-i18n="s3.q3.o6">Problème de paiement / taxes</span></label>
+          <label class="opt"><input type="checkbox" class="other-check" value="Autre"><span data-i18n="common.other">Autre :</span> <input type="text" class="other-input" data-i18n-ph="common.specify" placeholder="précisez"></label>
+        </div>
+      </div>
+
+      <div class="field" id="field-documentsProblematiques"><label class="q" data-i18n="s3.q4">Quels documents posent le plus souvent problème ?</label>
+        <div class="options" data-group="documentsProblematiques">
+          <label class="opt"><input type="checkbox" value="Facture commerciale"><span data-i18n="s3.q4.o1">Facture commerciale</span></label>
+          <label class="opt"><input type="checkbox" value="Liste de colisage"><span data-i18n="s3.q4.o2">Liste de colisage</span></label>
+          <label class="opt"><input type="checkbox" value="Certificat d'origine"><span data-i18n="s3.q4.o3">Certificat d'origine</span></label>
+          <label class="opt"><input type="checkbox" value="BL / connaissement"><span data-i18n="s3.q4.o4">BL / connaissement</span></label>
+          <label class="opt"><input type="checkbox" value="Déclaration douanière (DUM)"><span data-i18n="s3.q4.o5">Déclaration douanière (DUM)</span></label>
+          <label class="opt"><input type="checkbox" value="Autorisations spécifiques"><span data-i18n="s3.q4.o6">Autorisations spécifiques</span></label>
+          <label class="opt"><input type="checkbox" class="other-check" value="Autre"><span data-i18n="common.other">Autre :</span> <input type="text" class="other-input" data-i18n-ph="common.specify" placeholder="précisez"></label>
+        </div>
+      </div>
+
+      <div class="field" id="field-sourceErreurs"><label class="q" data-i18n="s3.q5">Les erreurs proviennent-elles généralement...</label>
+        <div class="options" data-group="sourceErreurs">
+          <label class="opt"><input type="checkbox" value="Des clients"><span data-i18n="s3.q5.o1">Des clients</span></label>
+          <label class="opt"><input type="checkbox" value="Des fournisseurs"><span data-i18n="s3.q5.o2">Des fournisseurs</span></label>
+          <label class="opt"><input type="checkbox" value="Des transporteurs"><span data-i18n="s3.q5.o3">Des transporteurs</span></label>
+          <label class="opt"><input type="checkbox" value="Des compagnies maritimes"><span data-i18n="s3.q5.o4">Des compagnies maritimes</span></label>
+          <label class="opt"><input type="checkbox" value="De la douane"><span data-i18n="s3.q5.o5">De la douane</span></label>
+          <label class="opt"><input type="checkbox" value="De l'équipe interne (saisie, suivi)"><span data-i18n="s3.q5.o6">De l'équipe interne (saisie, suivi)</span></label>
+          <label class="opt"><input type="checkbox" class="other-check" value="Autre"><span data-i18n="common.other">Autre :</span> <input type="text" class="other-input" data-i18n-ph="common.specify" placeholder="précisez"></label>
+        </div>
+      </div>
+
+      <div class="field" id="field-freqErreurs"><label class="q" data-i18n="s3.q6">Fréquence des erreurs documentaires que vous constatez</label>
+        <div class="scale" data-group="freqErreurs" data-radio="true">
+          <label><input type="radio" name="freqErreurs" value="Jamais"><span data-i18n="common.never">Jamais</span></label>
+          <label><input type="radio" name="freqErreurs" value="Rarement"><span data-i18n="common.rarely">Rarement</span></label>
+          <label><input type="radio" name="freqErreurs" value="Régulièrement"><span data-i18n="common.regularly">Régulièrement</span></label>
+          <label><input type="radio" name="freqErreurs" value="Fréquemment"><span data-i18n="common.frequently">Fréquemment</span></label>
+        </div>
+      </div>
+    </section>
+
+    <section class="block" id="s4">
+      <div class="eyebrow" data-i18n="eyebrow.s04">Section 04</div>
+      <h2 data-i18n="s4.h2">Outils informatiques</h2>
+      <p class="desc">Odoo / TMS, Portnet, BADR, Sendatrack.</p>
+
+      <div class="field"><label class="q" data-i18n="s4.q1">À quelle fréquence rencontrez-vous des problèmes (bug, lenteur, blocage) sur chacun de ces outils ?</label>
+        <div class="matrix-wrap"><table class="matrix">
+          <tr><th data-i18n="s4.matrix.tool">Outil</th><th data-i18n="common.never">Jamais</th><th data-i18n="common.rarely">Rarement</th><th data-i18n="s4.matrix.often">Souvent</th><th data-i18n="s4.matrix.veryoften">Très souvent</th></tr>
+          <tr><td>Odoo / TMS</td><td><input type="radio" name="outil-odoo" value="Jamais"></td><td><input type="radio" name="outil-odoo" value="Rarement"></td><td><input type="radio" name="outil-odoo" value="Souvent"></td><td><input type="radio" name="outil-odoo" value="Très souvent"></td></tr>
+          <tr><td>Portnet</td><td><input type="radio" name="outil-portnet" value="Jamais"></td><td><input type="radio" name="outil-portnet" value="Rarement"></td><td><input type="radio" name="outil-portnet" value="Souvent"></td><td><input type="radio" name="outil-portnet" value="Très souvent"></td></tr>
+          <tr><td>BADR</td><td><input type="radio" name="outil-badr" value="Jamais"></td><td><input type="radio" name="outil-badr" value="Rarement"></td><td><input type="radio" name="outil-badr" value="Souvent"></td><td><input type="radio" name="outil-badr" value="Très souvent"></td></tr>
+          <tr><td>Sendatrack</td><td><input type="radio" name="outil-sendatrack" value="Jamais"></td><td><input type="radio" name="outil-sendatrack" value="Rarement"></td><td><input type="radio" name="outil-sendatrack" value="Souvent"></td><td><input type="radio" name="outil-sendatrack" value="Très souvent"></td></tr>
+        </table></div>
+      </div>
+
+      <div class="field" id="field-typeProblemeOutil"><label class="q" data-i18n="s4.q2">Quels types de problèmes rencontrez-vous le plus avec ces systèmes ?</label>
+        <div class="options" data-group="typeProblemeOutil">
+          <label class="opt"><input type="checkbox" value="Lenteur / temps de réponse"><span data-i18n="s4.q2.o1">Lenteur / temps de réponse</span></label>
+          <label class="opt"><input type="checkbox" value="Bug ou blocage complet"><span data-i18n="s4.q2.o2">Bug ou blocage complet</span></label>
+          <label class="opt"><input type="checkbox" value="Incompatibilité entre systèmes"><span data-i18n="s4.q2.o3">Incompatibilité entre systèmes (obligeant à ressaisir la même info)</span></label>
+          <label class="opt"><input type="checkbox" value="Manque de formation à l'outil"><span data-i18n="s4.q2.o4">Manque de formation à l'outil</span></label>
+          <label class="opt"><input type="checkbox" value="Interface peu intuitive"><span data-i18n="s4.q2.o5">Interface peu intuitive</span></label>
+          <label class="opt"><input type="checkbox" value="Perte ou incohérence de données"><span data-i18n="s4.q2.o6">Perte ou incohérence de données</span></label>
+          <label class="opt"><input type="checkbox" class="other-check" value="Autre"><span data-i18n="common.other">Autre :</span> <input type="text" class="other-input" data-i18n-ph="common.specify" placeholder="précisez"></label>
+        </div>
+      </div>
+
+      <div class="field"><label class="q"><span data-i18n="s4.q3">Décrivez un incident récent lié à ces outils</span> <span class="hint" data-i18n="common.optional">(facultatif)</span></label><textarea id="incidentOutil"></textarea></div>
+    </section>
+
+    <section class="block" id="s5">
+      <div class="eyebrow" data-i18n="eyebrow.s05">Section 05</div>
+      <h2 data-i18n="s5.h2">Risques &amp; grille d'évaluation</h2>
+      <p class="desc" data-i18n="s5.desc">Notez l'impact et la fréquence perçus de chaque type de risque.</p>
+
+      <div class="field"><label class="q" data-i18n="s5.q1">Pour chaque risque, évaluez sa fréquence et son impact sur l'activité</label>
+        <div class="matrix-wrap"><table class="matrix">
+          <tr><th data-i18n="s5.matrix.risk">Risque</th><th data-i18n="s5.matrix.freq">Fréquence</th><th data-i18n="s5.matrix.impact">Impact</th></tr>
+          <tr><td data-i18n="s5.r1">Erreur documentaire</td><td><select name="risk-doc-freq"><option value="" data-i18n="common.dash">—</option><option value="Faible" data-i18n="common.low">Faible</option><option value="Moyenne" data-i18n="common.medium.f">Moyenne</option><option value="Élevée" data-i18n="common.high.f">Élevée</option></select></td><td><select name="risk-doc-impact"><option value="" data-i18n="common.dash">—</option><option value="Faible" data-i18n="common.low">Faible</option><option value="Moyen" data-i18n="common.medium.m">Moyen</option><option value="Élevé" data-i18n="common.high.m">Élevé</option></select></td></tr>
+          <tr><td data-i18n="s5.r2">Panne / bug système</td><td><select name="risk-sys-freq"><option value="" data-i18n="common.dash">—</option><option value="Faible" data-i18n="common.low">Faible</option><option value="Moyenne" data-i18n="common.medium.f">Moyenne</option><option value="Élevée" data-i18n="common.high.f">Élevée</option></select></td><td><select name="risk-sys-impact"><option value="" data-i18n="common.dash">—</option><option value="Faible" data-i18n="common.low">Faible</option><option value="Moyen" data-i18n="common.medium.m">Moyen</option><option value="Élevé" data-i18n="common.high.m">Élevé</option></select></td></tr>
+          <tr><td data-i18n="s5.r3">Retard douanier</td><td><select name="risk-douane-freq"><option value="" data-i18n="common.dash">—</option><option value="Faible" data-i18n="common.low">Faible</option><option value="Moyenne" data-i18n="common.medium.f">Moyenne</option><option value="Élevée" data-i18n="common.high.f">Élevée</option></select></td><td><select name="risk-douane-impact"><option value="" data-i18n="common.dash">—</option><option value="Faible" data-i18n="common.low">Faible</option><option value="Moyen" data-i18n="common.medium.m">Moyen</option><option value="Élevé" data-i18n="common.high.m">Élevé</option></select></td></tr>
+          <tr><td data-i18n="s5.r4">Rupture de stock / entrepôt</td><td><select name="risk-stock-freq"><option value="" data-i18n="common.dash">—</option><option value="Faible" data-i18n="common.low">Faible</option><option value="Moyenne" data-i18n="common.medium.f">Moyenne</option><option value="Élevée" data-i18n="common.high.f">Élevée</option></select></td><td><select name="risk-stock-impact"><option value="" data-i18n="common.dash">—</option><option value="Faible" data-i18n="common.low">Faible</option><option value="Moyen" data-i18n="common.medium.m">Moyen</option><option value="Élevé" data-i18n="common.high.m">Élevé</option></select></td></tr>
+          <tr><td data-i18n="s5.r5">Communication défaillante</td><td><select name="risk-comm-freq"><option value="" data-i18n="common.dash">—</option><option value="Faible" data-i18n="common.low">Faible</option><option value="Moyenne" data-i18n="common.medium.f">Moyenne</option><option value="Élevée" data-i18n="common.high.f">Élevée</option></select></td><td><select name="risk-comm-impact"><option value="" data-i18n="common.dash">—</option><option value="Faible" data-i18n="common.low">Faible</option><option value="Moyen" data-i18n="common.medium.m">Moyen</option><option value="Élevé" data-i18n="common.high.m">Élevé</option></select></td></tr>
+        </table></div>
+      </div>
+      <div class="field"><label class="q" data-i18n="s5.q2">Y a-t-il un risque qui, selon vous, n'est pas encore assez pris au sérieux ?</label><textarea id="risqueNonPrisAuSerieux"></textarea></div>
+    </section>
+
+    <section class="block" id="s6">
+      <div class="eyebrow" data-i18n="eyebrow.s06">Section 06</div>
+      <h2 data-i18n="s6.h2">Interactions inter-départements</h2>
+      <p class="desc" data-i18n="s6.desc">Le service Transit ne fonctionne pas seul.</p>
+
+      <div class="field" id="field-departements"><label class="q" data-i18n="s6.q1">Avec quels départements interagissez-vous le plus fréquemment ?</label>
+        <div class="options" data-group="departements">
+          <label class="opt"><input type="checkbox" value="Commercial"><span data-i18n="s6.q1.o1">Commercial</span></label>
+          <label class="opt"><input type="checkbox" value="Achats"><span data-i18n="s6.q1.o2">Achats</span></label>
+          <label class="opt"><input type="checkbox" value="Comptabilité / Finance"><span data-i18n="s6.q1.o3">Comptabilité / Finance</span></label>
+          <label class="opt"><input type="checkbox" value="Entrepôt / Magasin"><span data-i18n="s6.q1.o4">Entrepôt / Magasin</span></label>
+          <label class="opt"><input type="checkbox" value="Informatique / IT"><span data-i18n="s6.q1.o5">Informatique / IT</span></label>
+          <label class="opt"><input type="checkbox" value="Direction générale"><span data-i18n="s6.q1.o6">Direction générale</span></label>
+          <label class="opt"><input type="checkbox" class="other-check" value="Autre"><span data-i18n="common.other">Autre :</span> <input type="text" class="other-input" data-i18n-ph="common.specify" placeholder="précisez"></label>
+        </div>
+      </div>
+
+      <div class="field" id="field-friction"><label class="q" data-i18n="s6.q2">Quel est le principal point de friction dans ces échanges ?</label>
+        <div class="options" data-group="friction" data-radio="true">
+          <label class="opt"><input type="radio" name="friction" value="Délai de réponse"><span data-i18n="s6.q2.o1">Délai de réponse</span></label>
+          <label class="opt"><input type="radio" name="friction" value="Manque d'information partagée"><span data-i18n="s6.q2.o2">Manque d'information partagée</span></label>
+          <label class="opt"><input type="radio" name="friction" value="Désaccord sur les priorités"><span data-i18n="s6.q2.o3">Désaccord sur les priorités</span></label>
+          <label class="opt"><input type="radio" name="friction" value="Absence de procédure claire"><span data-i18n="s6.q2.o4">Absence de procédure claire</span></label>
+          <label class="opt"><input type="radio" name="friction" value="Outils différents ou incompatibles"><span data-i18n="s6.q2.o5">Outils différents ou incompatibles</span></label>
+          <label class="opt"><input type="radio" name="friction" class="other-check" value="Autre"><span data-i18n="common.other">Autre :</span> <input type="text" class="other-input" data-i18n-ph="common.specify" placeholder="précisez"></label>
+        </div>
+      </div>
+
+      <div class="field"><label class="q"><span data-i18n="s6.q3">Un exemple concret de dysfonctionnement avec un autre département</span> <span class="hint" data-i18n="common.optional">(facultatif)</span></label><textarea id="exempleDysfonctionnement"></textarea></div>
+    </section>
+
+    <section class="block" id="s7">
+      <div class="eyebrow" data-i18n="eyebrow.s07">Section 07</div>
+      <h2 data-i18n="s7.h2">Acteurs externes</h2>
+      <p class="desc" data-i18n="s7.desc">Clients, transporteurs, transitaires, douane.</p>
+
+      <div class="field" id="field-acteursDifficiles"><label class="q" data-i18n="s7.q1">Avec quels acteurs externes les échanges sont-ils les plus difficiles ?</label>
+        <div class="options" data-group="acteursDifficiles">
+          <label class="opt"><input type="checkbox" value="Clients directement"><span data-i18n="s7.q1.o1">Clients directement</span></label>
+          <label class="opt"><input type="checkbox" value="Transporteurs"><span data-i18n="s7.q1.o2">Transporteurs</span></label>
+          <label class="opt"><input type="checkbox" value="Transitaires externes"><span data-i18n="s7.q1.o3">Transitaires externes</span></label>
+          <label class="opt"><input type="checkbox" value="Douane"><span data-i18n="s7.q1.o4">Douane</span></label>
+          <label class="opt"><input type="checkbox" value="Compagnies maritimes"><span data-i18n="s7.q1.o5">Compagnies maritimes</span></label>
+          <label class="opt"><input type="checkbox" class="other-check" value="Autre"><span data-i18n="common.other">Autre :</span> <input type="text" class="other-input" data-i18n-ph="common.specify" placeholder="précisez"></label>
+        </div>
+      </div>
+      <div class="field"><label class="q" data-i18n="s7.q2">Quelle amélioration dans la relation avec ces acteurs externes aurait le plus d'impact ?</label><textarea id="ameliorationExterne"></textarea></div>
+    </section>
+
+    <section class="block" id="s8">
+      <div class="eyebrow" data-i18n="eyebrow.s08">Section 08</div>
+      <h2 data-i18n="s8.h2">Pilotage de la plateforme logistique</h2>
+      <p class="desc" data-i18n="s8.desc">Fonctionnement de l'entrepôt et coordination des flux.</p>
+
+      <div class="field" id="field-problemesEntrepot"><label class="q" data-i18n="s8.q1">Quels problèmes rencontrez-vous le plus au niveau de l'entrepôt ?</label>
+        <div class="options" data-group="problemesEntrepot">
+          <label class="opt"><input type="checkbox" value="Ruptures de stock"><span data-i18n="s8.q1.o1">Ruptures de stock</span></label>
+          <label class="opt"><input type="checkbox" value="Erreurs d'inventaire"><span data-i18n="s8.q1.o2">Erreurs d'inventaire</span></label>
+          <label class="opt"><input type="checkbox" value="Retards de réception ou d'expédition"><span data-i18n="s8.q1.o3">Retards de réception ou d'expédition</span></label>
+          <label class="opt"><input type="checkbox" value="Manque de coordination avec le magasin"><span data-i18n="s8.q1.o4">Manque de coordination avec le magasin</span></label>
+          <label class="opt"><input type="checkbox" value="Capacité de stockage insuffisante"><span data-i18n="s8.q1.o5">Capacité de stockage insuffisante</span></label>
+          <label class="opt"><input type="checkbox" value="Mauvaise circulation de l'information"><span data-i18n="s8.q1.o6">Mauvaise circulation de l'information</span></label>
+          <label class="opt"><input type="checkbox" class="other-check" value="Autre"><span data-i18n="common.other">Autre :</span> <input type="text" class="other-input" data-i18n-ph="common.specify" placeholder="précisez"></label>
+        </div>
+      </div>
+      <div class="field" id="field-freqEntrepot"><label class="q" data-i18n="s8.q2">Fréquence globale de ces problèmes</label>
+        <div class="scale" data-group="freqEntrepot" data-radio="true">
+          <label><input type="radio" name="freqEntrepot" value="Jamais"><span data-i18n="common.never">Jamais</span></label>
+          <label><input type="radio" name="freqEntrepot" value="Rarement"><span data-i18n="common.rarely">Rarement</span></label>
+          <label><input type="radio" name="freqEntrepot" value="Régulièrement"><span data-i18n="common.regularly">Régulièrement</span></label>
+          <label><input type="radio" name="freqEntrepot" value="Fréquemment"><span data-i18n="common.frequently">Fréquemment</span></label>
+        </div>
+      </div>
+    </section>
+
+    <section class="block" id="s9">
+      <div class="eyebrow" data-i18n="eyebrow.s09">Section 09</div>
+      <h2 data-i18n="s9.h2">Performance</h2>
+      <p class="desc" data-i18n="s9.desc">Votre évaluation globale du département.</p>
+
+      <div class="field" id="field-sujetImpact">
+        <label class="q"><span data-i18n="s9.q1">Quel sujet a, selon vous, le plus d'impact sur la performance du département ?</span> <span class="req">*</span></label>
+        <div class="options" data-group="sujetImpact" data-radio="true">
+          <label class="opt"><input type="radio" name="sujetImpact" value="Systèmes informatiques"><span data-i18n="s9.q1.o1">Systèmes informatiques (Odoo, Portnet, BADR, Sendatrack)</span></label>
+          <label class="opt"><input type="radio" name="sujetImpact" value="Gestion documentaire / dossiers"><span data-i18n="s9.q1.o2">Gestion documentaire / dossiers</span></label>
+          <label class="opt"><input type="radio" name="sujetImpact" value="Délais et procédures douanières"><span data-i18n="s9.q1.o3">Délais et procédures douanières</span></label>
+          <label class="opt"><input type="radio" name="sujetImpact" value="Pilotage de l'entrepôt"><span data-i18n="s9.q1.o4">Pilotage de l'entrepôt</span></label>
+          <label class="opt"><input type="radio" name="sujetImpact" value="Communication inter-départements"><span data-i18n="s9.q1.o5">Communication inter-départements</span></label>
+          <label class="opt"><input type="radio" name="sujetImpact" value="Ressources humaines / formation"><span data-i18n="s9.q1.o6">Ressources humaines / formation</span></label>
+          <label class="opt"><input type="radio" name="sujetImpact" class="other-check" value="Autre"><span data-i18n="common.other">Autre :</span> <input type="text" class="other-input" data-i18n-ph="common.specify" placeholder="précisez"></label>
+        </div>
+        <div class="error-msg" data-i18n="common.err.select">Merci de sélectionner une réponse.</div>
+      </div>
+
+      <div class="field" id="field-efficacite">
+        <label class="q"><span data-i18n="s9.q2">Comment évaluez-vous l'efficacité globale actuelle du département ?</span> <span class="req">*</span></label>
+        <div class="scale" data-group="efficacite" data-radio="true">
+          <label><input type="radio" name="efficacite" value="1"><span data-i18n="s9.q2.o1">1 — Faible</span></label>
+          <label><input type="radio" name="efficacite" value="2">2</label>
+          <label><input type="radio" name="efficacite" value="3">3</label>
+          <label><input type="radio" name="efficacite" value="4">4</label>
+          <label><input type="radio" name="efficacite" value="5"><span data-i18n="s9.q2.o5">5 — Excellente</span></label>
+        </div>
+        <div class="error-msg" data-i18n="s9.q2.err">Merci de choisir une note.</div>
+      </div>
+    </section>
+
+    <section class="block" id="s10">
+      <div class="eyebrow" data-i18n="eyebrow.s10">Section 10</div>
+      <h2 data-i18n="s10.h2">Amélioration continue</h2>
+      <p class="desc" data-i18n="s10.desc">Votre avis compte dans la priorisation des actions à venir.</p>
+      <div class="field"><label class="q" data-i18n="s10.q1">Quelle amélioration prioritaire proposeriez-vous ?</label><textarea id="ameliorationPrioritaire"></textarea></div>
+      <div class="field"><label class="q" data-i18n="s10.q2">Si vous ne pouviez régler qu'un seul problème dans ce département, lequel choisiriez-vous ?</label><textarea id="unSeulProbleme"></textarea></div>
+    </section>
+
+    <section class="block" id="s11">
+      <div class="eyebrow" data-i18n="eyebrow.s11">Section 11</div>
+      <h2 data-i18n="s11.h2">Identification</h2>
+      <p class="desc" data-i18n="common.optional.cap">Facultatif.</p>
+      <div class="field"><label class="q"><span data-i18n="s11.q1">Nom</span> <span class="hint" data-i18n="s11.q1.hint">(facultatif — vous pouvez répondre anonymement)</span></label><input type="text" id="nom"></div>
+    </section>
+
+    <div class="submit-row">
+      <button type="submit" class="submit" id="submitBtn" data-i18n="submit.btn">Envoyer le diagnostic</button>
+      <span class="submit-hint" data-i18n="submit.hint">Vérifiez les champs marqués * avant l'envoi.</span>
+    </div>
+  </form>
+
+  <div class="confirm" id="confirmScreen">
+    <div class="badge" data-i18n="confirm.badge">Dossier reçu</div>
+    <h2 data-i18n="confirm.h2">Merci pour votre contribution</h2>
+    <p data-i18n="confirm.p">Vos réponses ont été transmises en toute confidentialité et seront intégrées à l'analyse du diagnostic du département Transit.</p>
+    <div class="err" id="errMsg"></div>
+  </div>
+</div>
+
+<script>
+const translations = {
+  fr: {
+    "meta.docref":"Réf. dossier :", "meta.dept":"Département Transit — FTA Logistics", "meta.stamp":"Usage interne",
+    "title":"Diagnostic du département Transit",
+    "subtitle":"Ce questionnaire recense les problèmes, risques et frictions récurrents du service — avec les autres départements et partenaires externes — pour prioriser objectivement les axes d'amélioration.",
+    "meta.note":"Répondez selon votre expérience réelle du terrain. Vos réponses sont confidentielles et consultables uniquement par la personne menant ce diagnostic.",
+    "meta.time":"· 15–20 min",
+    "toc.title":"Sommaire",
+    "toc.s1":"Profil","toc.s2":"Fonctionnement quotidien","toc.s3":"Gestion des dossiers","toc.s4":"Outils informatiques",
+    "toc.s5":"Risques & grille d'évaluation","toc.s6":"Interactions inter-départements","toc.s7":"Acteurs externes",
+    "toc.s8":"Pilotage plateforme logistique","toc.s9":"Performance","toc.s10":"Amélioration continue","toc.s11":"Identification (facultatif)",
+    "eyebrow.s01":"Section 01","eyebrow.s02":"Section 02","eyebrow.s03":"Section 03","eyebrow.s04":"Section 04","eyebrow.s05":"Section 05",
+    "eyebrow.s06":"Section 06","eyebrow.s07":"Section 07","eyebrow.s08":"Section 08","eyebrow.s09":"Section 09","eyebrow.s10":"Section 10","eyebrow.s11":"Section 11",
+    "common.other":"Autre :","common.specify":"précisez","common.select":"— Sélectionner —","common.optional":"(facultatif)","common.optional.cap":"Facultatif.",
+    "common.never":"Jamais","common.rarely":"Rarement","common.regularly":"Régulièrement","common.frequently":"Fréquemment",
+    "common.dash":"—","common.low":"Faible","common.medium.f":"Moyenne","common.high.f":"Élevée","common.medium.m":"Moyen","common.high.m":"Élevé",
+    "common.err.select":"Merci de sélectionner une réponse.",
+    "s1.h2":"Votre profil dans le département","s1.desc":"Quelques repères pour contextualiser vos réponses.",
+    "s1.q1":"Quel est votre poste au sein du département Transit ?","s1.q1.ph":"ex. Agent transit, Chargé de dédouanement...",
+    "s1.q2":"Depuis combien de temps travaillez-vous chez FTA Logistics ?",
+    "s1.q2.o1":"Moins d'un an","s1.q2.o2":"1 à 3 ans","s1.q2.o3":"3 à 5 ans","s1.q2.o4":"Plus de 5 ans",
+    "s1.q3":"Dans quelles activités intervenez-vous principalement ?",
+    "s1.q3.o1":"Import","s1.q3.o2":"Export","s1.q3.o3":"Dédouanement","s1.q3.o4":"Stockage libre",
+    "s1.q3.o5":"Gestion de la plateforme logistique","s1.q3.o6":"Transport","s1.q3.o7":"Relation client",
+    "s1.q3.err":"Merci de cocher au moins une réponse.",
+    "s2.h2":"Fonctionnement quotidien","s2.desc":"Votre travail au jour le jour et sa charge.",
+    "s2.q1":"Pouvez-vous décrire les principales étapes de votre travail quotidien ?",
+    "s2.q1.ph":"ex. réception des dossiers, vérification des documents, saisie sur Odoo...",
+    "s2.q2":"Selon vous, quelles tâches prennent le plus de temps ?",
+    "s2.q3":"Quelles tâches génèrent le plus d'erreurs ou de difficultés ?",
+    "s2.q3.o1":"Saisie des dossiers","s2.q3.o2":"Vérification documentaire","s2.q3.o3":"Calcul des droits et taxes",
+    "s2.q3.o4":"Suivi des dossiers en douane","s2.q3.o5":"Communication avec les transporteurs",
+    "s2.q3.o6":"Coordination avec l'entrepôt","s2.q3.o7":"Facturation",
+    "s2.q4":"Quelles activités pourraient être simplifiées ou automatisées ?",
+    "s2.q5":"À quelles périodes la charge de travail devient-elle la plus importante ?",
+    "s2.q5.o1":"Fin de mois","s2.q5.o2":"Fin d'année","s2.q5.o3":"Périodes de pointe import / export saisonnières","s2.q5.o4":"Urgences douanières",
+    "s3.h2":"Gestion des dossiers","s3.desc":"Import, export, stockage libre, dédouanement.",
+    "s3.q1":"Lors du traitement des dossiers Import ou Export, quels sont les problèmes les plus fréquents ?",
+    "s3.q2":"À quelle étape les dossiers sont-ils le plus souvent bloqués ?",
+    "s3.q2.o1":"Constitution du dossier","s3.q2.o2":"Obtention des documents","s3.q2.o3":"Calcul des droits / taxes","s3.q2.o4":"Passage en douane","s3.q2.o5":"Livraison finale",
+    "s3.q3":"Quelles sont les principales causes de retard dans le traitement des dossiers ?",
+    "s3.q3.o1":"Documents manquants","s3.q3.o2":"Erreur de saisie","s3.q3.o3":"Lenteur du système","s3.q3.o4":"Attente réponse douane","s3.q3.o5":"Attente réponse client","s3.q3.o6":"Problème de paiement / taxes",
+    "s3.q4":"Quels documents posent le plus souvent problème ?",
+    "s3.q4.o1":"Facture commerciale","s3.q4.o2":"Liste de colisage","s3.q4.o3":"Certificat d'origine","s3.q4.o4":"BL / connaissement","s3.q4.o5":"Déclaration douanière (DUM)","s3.q4.o6":"Autorisations spécifiques",
+    "s3.q5":"Les erreurs proviennent-elles généralement...",
+    "s3.q5.o1":"Des clients","s3.q5.o2":"Des fournisseurs","s3.q5.o3":"Des transporteurs","s3.q5.o4":"Des compagnies maritimes","s3.q5.o5":"De la douane","s3.q5.o6":"De l'équipe interne (saisie, suivi)",
+    "s3.q6":"Fréquence des erreurs documentaires que vous constatez",
+    "s4.h2":"Outils informatiques",
+    "s4.q1":"À quelle fréquence rencontrez-vous des problèmes (bug, lenteur, blocage) sur chacun de ces outils ?",
+    "s4.matrix.tool":"Outil","s4.matrix.often":"Souvent","s4.matrix.veryoften":"Très souvent",
+    "s4.q2":"Quels types de problèmes rencontrez-vous le plus avec ces systèmes ?",
+    "s4.q2.o1":"Lenteur / temps de réponse","s4.q2.o2":"Bug ou blocage complet","s4.q2.o3":"Incompatibilité entre systèmes (obligeant à ressaisir la même info)",
+    "s4.q2.o4":"Manque de formation à l'outil","s4.q2.o5":"Interface peu intuitive","s4.q2.o6":"Perte ou incohérence de données",
+    "s4.q3":"Décrivez un incident récent lié à ces outils",
+    "s5.h2":"Risques & grille d'évaluation","s5.desc":"Notez l'impact et la fréquence perçus de chaque type de risque.",
+    "s5.q1":"Pour chaque risque, évaluez sa fréquence et son impact sur l'activité",
+    "s5.matrix.risk":"Risque","s5.matrix.freq":"Fréquence","s5.matrix.impact":"Impact",
+    "s5.r1":"Erreur documentaire","s5.r2":"Panne / bug système","s5.r3":"Retard douanier","s5.r4":"Rupture de stock / entrepôt","s5.r5":"Communication défaillante",
+    "s5.q2":"Y a-t-il un risque qui, selon vous, n'est pas encore assez pris au sérieux ?",
+    "s6.h2":"Interactions inter-départements","s6.desc":"Le service Transit ne fonctionne pas seul.",
+    "s6.q1":"Avec quels départements interagissez-vous le plus fréquemment ?",
+    "s6.q1.o1":"Commercial","s6.q1.o2":"Achats","s6.q1.o3":"Comptabilité / Finance","s6.q1.o4":"Entrepôt / Magasin","s6.q1.o5":"Informatique / IT","s6.q1.o6":"Direction générale",
+    "s6.q2":"Quel est le principal point de friction dans ces échanges ?",
+    "s6.q2.o1":"Délai de réponse","s6.q2.o2":"Manque d'information partagée","s6.q2.o3":"Désaccord sur les priorités","s6.q2.o4":"Absence de procédure claire","s6.q2.o5":"Outils différents ou incompatibles",
+    "s6.q3":"Un exemple concret de dysfonctionnement avec un autre département",
+    "s7.h2":"Acteurs externes","s7.desc":"Clients, transporteurs, transitaires, douane.",
+    "s7.q1":"Avec quels acteurs externes les échanges sont-ils les plus difficiles ?",
+    "s7.q1.o1":"Clients directement","s7.q1.o2":"Transporteurs","s7.q1.o3":"Transitaires externes","s7.q1.o4":"Douane","s7.q1.o5":"Compagnies maritimes",
+    "s7.q2":"Quelle amélioration dans la relation avec ces acteurs externes aurait le plus d'impact ?",
+    "s8.h2":"Pilotage de la plateforme logistique","s8.desc":"Fonctionnement de l'entrepôt et coordination des flux.",
+    "s8.q1":"Quels problèmes rencontrez-vous le plus au niveau de l'entrepôt ?",
+    "s8.q1.o1":"Ruptures de stock","s8.q1.o2":"Erreurs d'inventaire","s8.q1.o3":"Retards de réception ou d'expédition","s8.q1.o4":"Manque de coordination avec le magasin","s8.q1.o5":"Capacité de stockage insuffisante","s8.q1.o6":"Mauvaise circulation de l'information",
+    "s8.q2":"Fréquence globale de ces problèmes",
+    "s9.h2":"Performance","s9.desc":"Votre évaluation globale du département.",
+    "s9.q1":"Quel sujet a, selon vous, le plus d'impact sur la performance du département ?",
+    "s9.q1.o1":"Systèmes informatiques (Odoo, Portnet, BADR, Sendatrack)","s9.q1.o2":"Gestion documentaire / dossiers","s9.q1.o3":"Délais et procédures douanières",
+    "s9.q1.o4":"Pilotage de l'entrepôt","s9.q1.o5":"Communication inter-départements","s9.q1.o6":"Ressources humaines / formation",
+    "s9.q2":"Comment évaluez-vous l'efficacité globale actuelle du département ?","s9.q2.o1":"1 — Faible","s9.q2.o5":"5 — Excellente","s9.q2.err":"Merci de choisir une note.",
+    "s10.h2":"Amélioration continue","s10.desc":"Votre avis compte dans la priorisation des actions à venir.",
+    "s10.q1":"Quelle amélioration prioritaire proposeriez-vous ?","s10.q2":"Si vous ne pouviez régler qu'un seul problème dans ce département, lequel choisiriez-vous ?",
+    "s11.h2":"Identification","s11.q1":"Nom","s11.q1.hint":"(facultatif — vous pouvez répondre anonymement)",
+    "submit.btn":"Envoyer le diagnostic","submit.hint":"Vérifiez les champs marqués * avant l'envoi.","submit.sending":"Envoi en cours…",
+    "confirm.badge":"Dossier reçu","confirm.h2":"Merci pour votre contribution",
+    "confirm.p":"Vos réponses ont été transmises en toute confidentialité et seront intégrées à l'analyse du diagnostic du département Transit.",
+    "confirm.err":"Une erreur est survenue lors de l'envoi ({msg}). Réessayez."
+  },
+  en: {
+    "meta.docref":"File ref.:", "meta.dept":"Transit Department — FTA Logistics", "meta.stamp":"Internal use",
+    "title":"Transit Department Diagnostic",
+    "subtitle":"This questionnaire maps out the department's recurring problems, risks and friction points — including with other departments and external partners — to objectively prioritize improvement areas.",
+    "meta.note":"Answer based on your real experience on the ground. Your answers are confidential and can only be viewed by the person leading this diagnostic.",
+    "meta.time":"· 15–20 min",
+    "toc.title":"Contents",
+    "toc.s1":"Profile","toc.s2":"Daily operations","toc.s3":"File management","toc.s4":"IT tools",
+    "toc.s5":"Risks & assessment grid","toc.s6":"Inter-department interactions","toc.s7":"External stakeholders",
+    "toc.s8":"Logistics platform management","toc.s9":"Performance","toc.s10":"Continuous improvement","toc.s11":"Identification (optional)",
+    "eyebrow.s01":"Section 01","eyebrow.s02":"Section 02","eyebrow.s03":"Section 03","eyebrow.s04":"Section 04","eyebrow.s05":"Section 05",
+    "eyebrow.s06":"Section 06","eyebrow.s07":"Section 07","eyebrow.s08":"Section 08","eyebrow.s09":"Section 09","eyebrow.s10":"Section 10","eyebrow.s11":"Section 11",
+    "common.other":"Other:","common.specify":"please specify","common.select":"— Select —","common.optional":"(optional)","common.optional.cap":"Optional.",
+    "common.never":"Never","common.rarely":"Rarely","common.regularly":"Regularly","common.frequently":"Frequently",
+    "common.dash":"—","common.low":"Low","common.medium.f":"Medium","common.high.f":"High","common.medium.m":"Medium","common.high.m":"High",
+    "common.err.select":"Please select an answer.",
+    "s1.h2":"Your profile in the department","s1.desc":"A few details to give context to your answers.",
+    "s1.q1":"What is your position within the Transit department?","s1.q1.ph":"e.g. Transit agent, Customs clearance officer...",
+    "s1.q2":"How long have you worked at FTA Logistics?",
+    "s1.q2.o1":"Less than a year","s1.q2.o2":"1 to 3 years","s1.q2.o3":"3 to 5 years","s1.q2.o4":"More than 5 years",
+    "s1.q3":"Which activities do you mainly work on?",
+    "s1.q3.o1":"Import","s1.q3.o2":"Export","s1.q3.o3":"Customs clearance","s1.q3.o4":"Free storage",
+    "s1.q3.o5":"Logistics platform management","s1.q3.o6":"Transport","s1.q3.o7":"Client relations",
+    "s1.q3.err":"Please select at least one answer.",
+    "s2.h2":"Daily operations","s2.desc":"Your day-to-day work and workload.",
+    "s2.q1":"Can you describe the main steps of your daily work?",
+    "s2.q1.ph":"e.g. receiving files, checking documents, entering data in Odoo...",
+    "s2.q2":"In your opinion, which tasks take the most time?",
+    "s2.q3":"Which tasks generate the most errors or difficulties?",
+    "s2.q3.o1":"Filing / data entry","s2.q3.o2":"Document verification","s2.q3.o3":"Duties & taxes calculation",
+    "s2.q3.o4":"Customs file follow-up","s2.q3.o5":"Communication with carriers",
+    "s2.q3.o6":"Warehouse coordination","s2.q3.o7":"Invoicing",
+    "s2.q4":"Which activities could be simplified or automated?",
+    "s2.q5":"During which periods does the workload become the highest?",
+    "s2.q5.o1":"End of month","s2.q5.o2":"End of year","s2.q5.o3":"Seasonal import/export peak periods","s2.q5.o4":"Customs emergencies",
+    "s3.h2":"File management","s3.desc":"Import, export, free storage, customs clearance.",
+    "s3.q1":"When processing Import or Export files, what are the most frequent problems?",
+    "s3.q2":"At which stage are files most often blocked?",
+    "s3.q2.o1":"File preparation","s3.q2.o2":"Obtaining documents","s3.q2.o3":"Duties/taxes calculation","s3.q2.o4":"Customs clearance step","s3.q2.o5":"Final delivery",
+    "s3.q3":"What are the main causes of delay in processing files?",
+    "s3.q3.o1":"Missing documents","s3.q3.o2":"Data entry error","s3.q3.o3":"System slowness","s3.q3.o4":"Waiting for customs response","s3.q3.o5":"Waiting for client response","s3.q3.o6":"Payment/tax issue",
+    "s3.q4":"Which documents most often cause problems?",
+    "s3.q4.o1":"Commercial invoice","s3.q4.o2":"Packing list","s3.q4.o3":"Certificate of origin","s3.q4.o4":"Bill of lading","s3.q4.o5":"Customs declaration (DUM)","s3.q4.o6":"Specific authorizations",
+    "s3.q5":"Do errors generally come from...",
+    "s3.q5.o1":"Clients","s3.q5.o2":"Suppliers","s3.q5.o3":"Carriers","s3.q5.o4":"Shipping lines","s3.q5.o5":"Customs","s3.q5.o6":"Internal team (data entry, follow-up)",
+    "s3.q6":"Frequency of documentary errors you observe",
+    "s4.h2":"IT tools",
+    "s4.q1":"How often do you encounter problems (bugs, slowness, blockage) on each of these tools?",
+    "s4.matrix.tool":"Tool","s4.matrix.often":"Often","s4.matrix.veryoften":"Very often",
+    "s4.q2":"What types of problems do you encounter most with these systems?",
+    "s4.q2.o1":"Slowness / response time","s4.q2.o2":"Bug or full blockage","s4.q2.o3":"Incompatibility between systems (forces re-entry of the same info)",
+    "s4.q2.o4":"Lack of training on the tool","s4.q2.o5":"Unintuitive interface","s4.q2.o6":"Data loss or inconsistency",
+    "s4.q3":"Describe a recent incident related to these tools",
+    "s5.h2":"Risks & assessment grid","s5.desc":"Rate the perceived impact and frequency of each type of risk.",
+    "s5.q1":"For each risk, rate its frequency and impact on the activity",
+    "s5.matrix.risk":"Risk","s5.matrix.freq":"Frequency","s5.matrix.impact":"Impact",
+    "s5.r1":"Documentary error","s5.r2":"System failure / bug","s5.r3":"Customs delay","s5.r4":"Stock / warehouse shortage","s5.r5":"Poor communication",
+    "s5.q2":"Is there a risk that, in your opinion, is not yet taken seriously enough?",
+    "s6.h2":"Inter-department interactions","s6.desc":"The Transit department doesn't operate alone.",
+    "s6.q1":"Which departments do you interact with most frequently?",
+    "s6.q1.o1":"Sales","s6.q1.o2":"Purchasing","s6.q1.o3":"Accounting / Finance","s6.q1.o4":"Warehouse / Store","s6.q1.o5":"IT","s6.q1.o6":"General management",
+    "s6.q2":"What is the main point of friction in these exchanges?",
+    "s6.q2.o1":"Response time","s6.q2.o2":"Lack of shared information","s6.q2.o3":"Disagreement on priorities","s6.q2.o4":"Absence of clear procedure","s6.q2.o5":"Different or incompatible tools",
+    "s6.q3":"A concrete example of dysfunction with another department",
+    "s7.h2":"External stakeholders","s7.desc":"Clients, carriers, freight forwarders, customs.",
+    "s7.q1":"With which external stakeholders are exchanges the most difficult?",
+    "s7.q1.o1":"Clients directly","s7.q1.o2":"Carriers","s7.q1.o3":"External freight forwarders","s7.q1.o4":"Customs","s7.q1.o5":"Shipping lines",
+    "s7.q2":"What improvement in the relationship with these external stakeholders would have the most impact?",
+    "s8.h2":"Logistics platform management","s8.desc":"Warehouse operations and flow coordination.",
+    "s8.q1":"What problems do you encounter most at the warehouse level?",
+    "s8.q1.o1":"Stock shortages","s8.q1.o2":"Inventory errors","s8.q1.o3":"Receiving/shipping delays","s8.q1.o4":"Lack of coordination with the store","s8.q1.o5":"Insufficient storage capacity","s8.q1.o6":"Poor information flow",
+    "s8.q2":"Overall frequency of these problems",
+    "s9.h2":"Performance","s9.desc":"Your overall assessment of the department.",
+    "s9.q1":"In your opinion, which topic has the most impact on the department's performance?",
+    "s9.q1.o1":"IT systems (Odoo, Portnet, BADR, Sendatrack)","s9.q1.o2":"Document / file management","s9.q1.o3":"Customs timeframes and procedures",
+    "s9.q1.o4":"Warehouse management","s9.q1.o5":"Inter-department communication","s9.q1.o6":"HR / training",
+    "s9.q2":"How do you rate the department's current overall efficiency?","s9.q2.o1":"1 — Low","s9.q2.o5":"5 — Excellent","s9.q2.err":"Please choose a rating.",
+    "s10.h2":"Continuous improvement","s10.desc":"Your opinion matters in prioritizing upcoming actions.",
+    "s10.q1":"What priority improvement would you suggest?","s10.q2":"If you could only fix one problem in this department, which one would you choose?",
+    "s11.h2":"Identification","s11.q1":"Name","s11.q1.hint":"(optional — you may answer anonymously)",
+    "submit.btn":"Submit the diagnostic","submit.hint":"Check the fields marked * before submitting.","submit.sending":"Sending…",
+    "confirm.badge":"File received","confirm.h2":"Thank you for your contribution",
+    "confirm.p":"Your answers have been submitted confidentially and will be included in the Transit department diagnostic analysis.",
+    "confirm.err":"An error occurred while sending ({msg}). Please try again."
+  },
+  ar: {
+    "meta.docref":"رقم الملف:", "meta.dept":"قسم الترانزيت — FTA Logistics", "meta.stamp":"استعمال داخلي",
+    "title":"تشخيص قسم الترانزيت",
+    "subtitle":"يهدف هذا الاستبيان إلى رصد المشاكل والمخاطر والاحتكاكات المتكررة في القسم، بما في ذلك مع الأقسام الأخرى والشركاء الخارجيين، من أجل ترتيب أولويات التحسين بشكل موضوعي.",
+    "meta.note":"أجب/أجيبي حسب تجربتك الحقيقية في الميدان. أجوبتك سرية ولا يطّلع عليها سوى الشخص المسؤول عن هذا التشخيص.",
+    "meta.time":"· 15 إلى 20 دقيقة",
+    "toc.title":"الفهرس",
+    "toc.s1":"البطاقة التعريفية","toc.s2":"سير العمل اليومي","toc.s3":"تدبير الملفات","toc.s4":"الأدوات المعلوماتية",
+    "toc.s5":"المخاطر وشبكة التقييم","toc.s6":"التفاعل بين الأقسام","toc.s7":"الفاعلون الخارجيون",
+    "toc.s8":"تدبير المنصة اللوجستيكية","toc.s9":"الأداء","toc.s10":"التحسين المستمر","toc.s11":"التعريف بالهوية (اختياري)",
+    "eyebrow.s01":"القسم 01","eyebrow.s02":"القسم 02","eyebrow.s03":"القسم 03","eyebrow.s04":"القسم 04","eyebrow.s05":"القسم 05",
+    "eyebrow.s06":"القسم 06","eyebrow.s07":"القسم 07","eyebrow.s08":"القسم 08","eyebrow.s09":"القسم 09","eyebrow.s10":"القسم 10","eyebrow.s11":"القسم 11",
+    "common.other":"أخرى:","common.specify":"حدد من فضلك","common.select":"— اختر —","common.optional":"(اختياري)","common.optional.cap":"اختياري.",
+    "common.never":"أبدا","common.rarely":"نادرا","common.regularly":"بانتظام","common.frequently":"بشكل متكرر",
+    "common.dash":"—","common.low":"ضعيفة","common.medium.f":"متوسطة","common.high.f":"مرتفعة","common.medium.m":"متوسط","common.high.m":"مرتفع",
+    "common.err.select":"يرجى اختيار جواب.",
+    "s1.h2":"بطاقتك التعريفية داخل القسم","s1.desc":"بعض المعطيات لوضع أجوبتك في سياقها.",
+    "s1.q1":"ما هو منصبك داخل قسم الترانزيت؟","s1.q1.ph":"مثال: عون ترانزيت، مكلف بالتخليص الجمركي...",
+    "s1.q2":"منذ متى تشتغل/تشتغلين في FTA Logistics؟",
+    "s1.q2.o1":"أقل من سنة","s1.q2.o2":"من 1 إلى 3 سنوات","s1.q2.o3":"من 3 إلى 5 سنوات","s1.q2.o4":"أكثر من 5 سنوات",
+    "s1.q3":"في أي الأنشطة تشتغل/تشتغلين بشكل رئيسي؟",
+    "s1.q3.o1":"الاستيراد","s1.q3.o2":"التصدير","s1.q3.o3":"التخليص الجمركي","s1.q3.o4":"التخزين الحر",
+    "s1.q3.o5":"تدبير المنصة اللوجستيكية","s1.q3.o6":"النقل","s1.q3.o7":"العلاقة مع الزبناء",
+    "s1.q3.err":"يرجى اختيار جواب واحد على الأقل.",
+    "s2.h2":"سير العمل اليومي","s2.desc":"عملك اليومي وحجم العبء المرتبط به.",
+    "s2.q1":"هل يمكنك وصف المراحل الأساسية لعملك اليومي؟",
+    "s2.q1.ph":"مثال: استلام الملفات، التحقق من الوثائق، إدخال المعطيات في Odoo...",
+    "s2.q2":"في رأيك، ما هي المهام التي تستغرق أكبر وقت؟",
+    "s2.q3":"ما هي المهام التي تسبب أكثر الأخطاء أو الصعوبات؟",
+    "s2.q3.o1":"إدخال بيانات الملفات","s2.q3.o2":"التحقق من الوثائق","s2.q3.o3":"احتساب الرسوم والضرائب",
+    "s2.q3.o4":"تتبع الملفات لدى الجمارك","s2.q3.o5":"التواصل مع الناقلين",
+    "s2.q3.o6":"التنسيق مع المستودع","s2.q3.o7":"الفوترة",
+    "s2.q4":"ما هي الأنشطة التي يمكن تبسيطها أو أتمتتها؟",
+    "s2.q5":"في أي الفترات يصبح حجم العمل في أوجه؟",
+    "s2.q5.o1":"نهاية الشهر","s2.q5.o2":"نهاية السنة","s2.q5.o3":"فترات ذروة الاستيراد والتصدير الموسمية","s2.q5.o4":"الحالات المستعجلة الجمركية",
+    "s3.h2":"تدبير الملفات","s3.desc":"الاستيراد، التصدير، التخزين الحر، التخليص الجمركي.",
+    "s3.q1":"أثناء معالجة ملفات الاستيراد أو التصدير، ما هي أكثر المشاكل تكرارا؟",
+    "s3.q2":"في أي مرحلة تتعطل الملفات غالبا؟",
+    "s3.q2.o1":"تكوين الملف","s3.q2.o2":"الحصول على الوثائق","s3.q2.o3":"احتساب الرسوم/الضرائب","s3.q2.o4":"مرحلة التخليص الجمركي","s3.q2.o5":"التسليم النهائي",
+    "s3.q3":"ما هي الأسباب الرئيسية للتأخر في معالجة الملفات؟",
+    "s3.q3.o1":"وثائق ناقصة","s3.q3.o2":"خطأ في الإدخال","s3.q3.o3":"بطء النظام","s3.q3.o4":"انتظار جواب الجمارك","s3.q3.o5":"انتظار جواب الزبون","s3.q3.o6":"مشكل في الأداء/الضرائب",
+    "s3.q4":"ما هي الوثائق التي تطرح مشكلا في الغالب؟",
+    "s3.q4.o1":"الفاتورة التجارية","s3.q4.o2":"لائحة التعبئة","s3.q4.o3":"شهادة المنشأ","s3.q4.o4":"سند الشحن","s3.q4.o5":"التصريح الجمركي (DUM)","s3.q4.o6":"التراخيص الخاصة",
+    "s3.q5":"من أين تأتي الأخطاء عادة؟",
+    "s3.q5.o1":"الزبناء","s3.q5.o2":"الموردون","s3.q5.o3":"الناقلون","s3.q5.o4":"شركات الشحن البحري","s3.q5.o5":"الجمارك","s3.q5.o6":"الفريق الداخلي (الإدخال، التتبع)",
+    "s3.q6":"وتيرة الأخطاء في الوثائق التي تلاحظها/تلاحظينها",
+    "s4.h2":"الأدوات المعلوماتية",
+    "s4.q1":"بأي وتيرة تواجه/تواجهين مشاكل (أعطاب، بطء، تعطل) في كل أداة من هذه الأدوات؟",
+    "s4.matrix.tool":"الأداة","s4.matrix.often":"غالبا","s4.matrix.veryoften":"غالبا جدا",
+    "s4.q2":"ما هي أكثر أنواع المشاكل التي تواجهها مع هذه الأنظمة؟",
+    "s4.q2.o1":"البطء / زمن الاستجابة","s4.q2.o2":"عطب أو توقف كامل","s4.q2.o3":"عدم توافق بين الأنظمة (يفرض إعادة إدخال نفس المعلومة)",
+    "s4.q2.o4":"نقص التكوين على الأداة","s4.q2.o5":"واجهة غير سهلة الاستعمال","s4.q2.o6":"فقدان أو تضارب في المعطيات",
+    "s4.q3":"صف حادثة أخيرة مرتبطة بهذه الأدوات",
+    "s5.h2":"المخاطر وشبكة التقييم","s5.desc":"قيّم الأثر والوتيرة المتصورين لكل نوع من المخاطر.",
+    "s5.q1":"بالنسبة لكل خطر، قيّم وتيرته وأثره على النشاط",
+    "s5.matrix.risk":"الخطر","s5.matrix.freq":"الوتيرة","s5.matrix.impact":"الأثر",
+    "s5.r1":"خطأ في الوثائق","s5.r2":"عطب/خلل في النظام","s5.r3":"تأخر جمركي","s5.r4":"نقص في المخزون/المستودع","s5.r5":"ضعف التواصل",
+    "s5.q2":"هل هناك خطر تعتبره غير مأخوذ بعين الاعتبار بالشكل الكافي؟",
+    "s6.h2":"التفاعل بين الأقسام","s6.desc":"لا يشتغل قسم الترانزيت بمعزل عن باقي الأقسام.",
+    "s6.q1":"مع أي الأقسام تتفاعل/تتفاعلين بشكل أكثر تواترا؟",
+    "s6.q1.o1":"التجاري","s6.q1.o2":"المشتريات","s6.q1.o3":"المحاسبة/المالية","s6.q1.o4":"المستودع/المخزن","s6.q1.o5":"المعلوميات","s6.q1.o6":"الإدارة العامة",
+    "s6.q2":"ما هي أكبر نقطة احتكاك في هذه التبادلات؟",
+    "s6.q2.o1":"مدة الجواب","s6.q2.o2":"نقص في المعلومات المتقاسمة","s6.q2.o3":"اختلاف في الأولويات","s6.q2.o4":"غياب مسطرة واضحة","s6.q2.o5":"أدوات مختلفة أو غير متوافقة",
+    "s6.q3":"مثال ملموس عن خلل مع قسم آخر",
+    "s7.h2":"الفاعلون الخارجيون","s7.desc":"الزبناء، الناقلون، الوسطاء، الجمارك.",
+    "s7.q1":"مع أي الفاعلين الخارجيين تكون التبادلات أكثر صعوبة؟",
+    "s7.q1.o1":"الزبناء مباشرة","s7.q1.o2":"الناقلون","s7.q1.o3":"الوسطاء الخارجيون","s7.q1.o4":"الجمارك","s7.q1.o5":"شركات الشحن البحري",
+    "s7.q2":"أي تحسين في العلاقة مع هؤلاء الفاعلين الخارجيين سيكون له أكبر أثر؟",
+    "s8.h2":"تدبير المنصة اللوجستيكية","s8.desc":"سير عمل المستودع وتنسيق التدفقات.",
+    "s8.q1":"ما هي أكثر المشاكل التي تواجهها على مستوى المستودع؟",
+    "s8.q1.o1":"نقص في المخزون","s8.q1.o2":"أخطاء في الجرد","s8.q1.o3":"تأخر في الاستلام أو الشحن","s8.q1.o4":"نقص في التنسيق مع المخزن","s8.q1.o5":"ضعف في القدرة التخزينية","s8.q1.o6":"سوء تداول المعلومة",
+    "s8.q2":"الوتيرة العامة لهذه المشاكل",
+    "s9.h2":"الأداء","s9.desc":"تقييمك العام للقسم.",
+    "s9.q1":"في رأيك، أي موضوع له أكبر أثر على أداء القسم؟",
+    "s9.q1.o1":"الأنظمة المعلوماتية (Odoo، Portnet، BADR، Sendatrack)","s9.q1.o2":"تدبير الوثائق/الملفات","s9.q1.o3":"الآجال والمساطر الجمركية",
+    "s9.q1.o4":"تدبير المستودع","s9.q1.o5":"التواصل بين الأقسام","s9.q1.o6":"الموارد البشرية/التكوين",
+    "s9.q2":"كيف تقيّم/تقيّمين الفعالية العامة الحالية للقسم؟","s9.q2.o1":"1 — ضعيفة","s9.q2.o5":"5 — ممتازة","s9.q2.err":"يرجى اختيار درجة.",
+    "s10.h2":"التحسين المستمر","s10.desc":"رأيك مهم في ترتيب أولويات الإجراءات المقبلة.",
+    "s10.q1":"ما هو التحسين ذو الأولوية الذي تقترحه/تقترحينه؟","s10.q2":"لو كان بإمكانك حل مشكل واحد فقط في هذا القسم، أي مشكل ستختار/تختارين؟",
+    "s11.h2":"التعريف بالهوية","s11.q1":"الاسم","s11.q1.hint":"(اختياري — يمكنك الإجابة دون ذكر الاسم)",
+    "submit.btn":"إرسال التشخيص","submit.hint":"تحقق من الخانات المؤشر عليها بـ * قبل الإرسال.","submit.sending":"جاري الإرسال…",
+    "confirm.badge":"تم استلام الملف","confirm.h2":"شكرا على مساهمتك",
+    "confirm.p":"تم توصيل أجوبتك بسرية تامة وستُدرج في تحليل تشخيص قسم الترانزيت.",
+    "confirm.err":"وقع خطأ أثناء الإرسال ({msg}). حاول/حاولي مرة أخرى."
+  }
+};
+
+let currentLang = localStorage.getItem('transitFormLang') || 'fr';
+
+function applyLang(lang){
+  currentLang = lang;
+  localStorage.setItem('transitFormLang', lang);
+  document.documentElement.lang = lang === 'ar' ? 'ar' : lang;
+  document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+
+  document.querySelectorAll('[data-i18n]').forEach(el=>{
+    const key = el.dataset.i18n;
+    const val = translations[lang][key];
+    if(val !== undefined) el.textContent = val;
+  });
+  document.querySelectorAll('[data-i18n-ph]').forEach(el=>{
+    const key = el.dataset.i18nPh;
+    const val = translations[lang][key];
+    if(val !== undefined) el.setAttribute('placeholder', val);
+  });
+  document.querySelectorAll('.lang-switch button').forEach(b=>{
+    b.classList.toggle('active', b.dataset.lang === lang);
+  });
+}
+
+document.querySelectorAll('.lang-switch button').forEach(btn=>{
+  btn.addEventListener('click', ()=>applyLang(btn.dataset.lang));
+});
+
+// watermark
+(function(){
+  const wm = document.getElementById('watermark');
+  for(let r=0;r<6;r++){
+    const s = document.createElement('span');
+    s.textContent = 'FTA LOGISTICS · USAGE INTERNE  ';
+    s.style.top = (r*220-60)+'px'; s.style.left = '-200px';
+    wm.appendChild(s);
+  }
+})();
+
+document.getElementById('docRef').textContent = 'TR-2026-' + Math.floor(1000+Math.random()*8999);
+
+const observer = new IntersectionObserver((entries)=>{
+  entries.forEach(e=>{ if(e.isIntersecting) e.target.classList.add('in-view'); });
+}, { threshold: 0.12 });
+document.querySelectorAll('section.block').forEach(s=>observer.observe(s));
+
+const form = document.getElementById('surveyForm');
+window.addEventListener('scroll', ()=>{
+  const rect = form.getBoundingClientRect();
+  const total = form.offsetHeight - window.innerHeight * 0.5;
+  const scrolled = Math.min(Math.max(-rect.top, 0), total);
+  document.getElementById('progressFill').style.width = (total>0 ? (scrolled/total)*100 : 0) + '%';
+});
+
+document.querySelectorAll('.other-check').forEach(chk=>{
+  chk.addEventListener('change', ()=>{
+    if(chk.checked){ chk.closest('.opt').querySelector('.other-input')?.focus(); }
+  });
+});
+
+function collectFormData(){
+  const data = {};
+  data.doc_ref = document.getElementById('docRef').textContent;
+  data.lang = currentLang;
+  data.poste = document.getElementById('poste').value.trim();
+  data.anciennete = document.getElementById('anciennete').value;
+  data.nom = document.getElementById('nom').value.trim();
+
+  const textMap = {
+    etapesQuotidien:'etapes_quotidien', tachesChronophages:'taches_chronophages', tachesAutomatiser:'taches_automatiser',
+    problemesImportExport:'problemes_import_export', incidentOutil:'incident_outil', risqueNonPrisAuSerieux:'risque_non_pris_au_serieux',
+    exempleDysfonctionnement:'exemple_dysfonctionnement', ameliorationExterne:'amelioration_externe',
+    ameliorationPrioritaire:'amelioration_prioritaire', unSeulProbleme:'un_seul_probleme'
+  };
+  Object.entries(textMap).forEach(([elId,col])=>{ data[col] = document.getElementById(elId).value.trim(); });
+
+  document.querySelectorAll('.options[data-group]').forEach(group=>{
+    const name = group.dataset.group;
+    const isRadio = group.dataset.radio === 'true';
+    const col = name.replace(/([A-Z])/g,'_$1').toLowerCase();
+    if(isRadio){
+      const checked = group.querySelector('input:checked');
+      let val = checked ? checked.value : null;
+      if(checked && checked.classList.contains('other-check')){
+        const oi = checked.closest('.opt').querySelector('.other-input');
+        if(oi && oi.value.trim()) val = oi.value.trim();
+      }
+      data[col] = val;
+    } else {
+      const vals = [];
+      group.querySelectorAll('input:checked').forEach(inp=>{
+        if(inp.classList.contains('other-check')){
+          const oi = inp.closest('.opt').querySelector('.other-input');
+          vals.push(oi && oi.value.trim() ? oi.value.trim() : 'Autre');
+        } else { vals.push(inp.value); }
+      });
+      data[col] = vals;
+    }
+  });
+
+  document.querySelectorAll('.scale[data-group]').forEach(group=>{
+    const name = group.dataset.group;
+    const col = name.replace(/([A-Z])/g,'_$1').toLowerCase();
+    const checked = group.querySelector('input:checked');
+    data[col] = checked ? checked.value : null;
+  });
+  if(data.efficacite) data.efficacite = Number(data.efficacite);
+
+  ['odoo','portnet','badr','sendatrack'].forEach(k=>{
+    const checked = document.querySelector(`input[name="outil-${k}"]:checked`);
+    data['outil_'+k] = checked ? checked.value : null;
+  });
+  ['doc','sys','douane','stock','comm'].forEach(k=>{
+    data['risk_'+k+'_freq'] = document.querySelector(`select[name="risk-${k}-freq"]`).value || null;
+    data['risk_'+k+'_impact'] = document.querySelector(`select[name="risk-${k}-impact"]`).value || null;
+  });
+
+  return data;
+}
+
+function validate(){
+  let valid = true;
+  [['field-activites', ()=>document.querySelectorAll('#field-activites input:checked').length>0],
+   ['field-sujetImpact', ()=>document.querySelector('#field-sujetImpact input:checked')!==null],
+   ['field-efficacite', ()=>document.querySelector('#field-efficacite input:checked')!==null]
+  ].forEach(([id,test])=>{
+    const el = document.getElementById(id);
+    const ok = test();
+    el.classList.toggle('invalid', !ok);
+    if(!ok) valid = false;
+  });
+  if(!valid){ document.querySelector('.field.invalid')?.scrollIntoView({behavior:'smooth', block:'center'}); }
+  return valid;
+}
+
+form.addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  if(!validate()) return;
+  const submitBtn = document.getElementById('submitBtn');
+  submitBtn.disabled = true;
+  submitBtn.textContent = translations[currentLang]['submit.sending'];
+
+  const payload = collectFormData();
+
+  try{
+    const mod = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm');
+    const supabase = mod.createClient(
+      'https://nujilqlkcarjbjsqmcjv.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im51amlscWxrY2FyamJqc3FtY2p2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQxMjYzNTUsImV4cCI6MjA5OTcwMjM1NX0.e_MnqkgzkuhZUN7nP3gzKjNDexEyxNGG5T5KR7nUbIM'
+    );
+    const { error } = await supabase.from('transit_responses').insert(payload);
+    submitBtn.disabled = false;
+    submitBtn.textContent = translations[currentLang]['submit.btn'];
+    if(error){
+      document.getElementById('errMsg').textContent = translations[currentLang]['confirm.err'].replace('{msg}', error.message);
+      document.getElementById('errMsg').style.display = 'block';
+      return;
+    }
+    form.classList.add('hidden');
+    document.getElementById('confirmScreen').classList.add('show');
+    window.scrollTo({top:0, behavior:'smooth'});
+  } catch(err){
+    submitBtn.disabled = false;
+    submitBtn.textContent = translations[currentLang]['submit.btn'];
+    document.getElementById('errMsg').textContent = translations[currentLang]['confirm.err'].replace('{msg}', err.message);
+    document.getElementById('errMsg').style.display = 'block';
+  }
+});
+
+applyLang(currentLang);
+</script>
+
+</body>
+</html>

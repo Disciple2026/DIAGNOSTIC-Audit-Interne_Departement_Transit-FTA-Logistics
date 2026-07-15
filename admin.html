@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — Diagnostic Transit</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+:root{
+  --ink:#1a1a1a; --paper:#f6f3ea; --navy:#1d2b3a; --navy-soft:#2a3d52;
+  --teal:#2f6f62; --teal-soft:#e4ede9; --amber:#c1852f; --line:#d8d2c2; --danger:#a13d2b;
+}
+*{box-sizing:border-box;}
+body{ margin:0; background:var(--paper); color:var(--ink); font-family:'IBM Plex Sans',sans-serif; font-size:15px; line-height:1.55; }
+.wrap{ max-width:900px; margin:0 auto; padding:40px 20px 80px; }
+
+/* login */
+.login-box{ max-width:380px; margin:120px auto; background:#fffdf8; border:1px solid var(--line); border-radius:6px; padding:34px; text-align:center; animation: loginIn .5s ease both; }
+@keyframes loginIn{ from{ opacity:0; transform:translateY(10px) scale(0.98); } to{ opacity:1; transform:translateY(0) scale(1); } }
+.login-box .stamp{ display:inline-block; border:2px solid var(--amber); color:var(--amber); font-family:'Oswald',sans-serif; font-size:11px; font-weight:600; letter-spacing:1.5px; padding:6px 10px; transform:rotate(4deg); border-radius:3px; text-transform:uppercase; margin-bottom:18px; animation: stampIn .5s cubic-bezier(.34,1.56,.64,1) .2s both; }
+@keyframes stampIn{ from{ opacity:0; transform:rotate(-14deg) scale(0.7); } to{ opacity:1; transform:rotate(4deg) scale(1); } }
+.login-box h1{ font-family:'Oswald',sans-serif; font-size:20px; color:var(--navy); margin:0 0 22px; text-transform:uppercase; }
+.login-box input{ width:100%; margin-bottom:12px; padding:11px 12px; border:1px solid var(--line); border-radius:3px; font-size:14px; background:#fff; transition:border-color .15s ease, box-shadow .15s ease; }
+.login-box input:focus{ outline:none; border-color:var(--teal); box-shadow:0 0 0 3px var(--teal-soft); }
+.login-box button{ width:100%; padding:12px; border:none; border-radius:3px; background:var(--navy); color:#fdfbf5; font-family:'Oswald',sans-serif; font-weight:600; letter-spacing:0.5px; text-transform:uppercase; cursor:pointer; box-shadow:0 2px 0 rgba(29,43,58,0.25); transition:background .15s ease, transform .1s ease, box-shadow .15s ease; }
+.login-box button:hover{ background:var(--navy-soft); transform:translateY(-1px); box-shadow:0 4px 10px rgba(29,43,58,0.22); }
+.login-box button:active{ transform:translateY(0); box-shadow:0 1px 0 rgba(29,43,58,0.25); }
+.login-err{ color:var(--danger); font-size:12.5px; margin-top:10px; display:none; }
+
+/* dashboard */
+.dash{ display:none; }
+.dash.show{ display:block; }
+header.dash-head{ display:flex; justify-content:space-between; align-items:flex-start; border-bottom:3px solid var(--navy); padding-bottom:18px; margin-bottom:28px; flex-wrap:wrap; gap:12px; animation: riseIn .5s ease both; }
+@keyframes riseIn{ from{ opacity:0; transform:translateY(10px); } to{ opacity:1; transform:translateY(0); } }
+h1.title{ font-family:'Oswald',sans-serif; font-size:24px; color:var(--navy); text-transform:uppercase; margin:0 0 4px; }
+.sub{ font-size:12.5px; color:#7a7a7a; font-family:'IBM Plex Mono',monospace; }
+.signout{ background:none; border:1px solid var(--navy); color:var(--navy); padding:8px 16px; border-radius:3px; cursor:pointer; font-size:13px; transition:background .15s ease, transform .1s ease; }
+.signout:hover{ background:var(--teal-soft); transform:translateY(-1px); }
+
+.stat-row{ display:flex; gap:14px; flex-wrap:wrap; margin-bottom:32px; }
+.stat-card{ flex:1; min-width:140px; background:#fffdf8; border:1px solid var(--line); border-radius:4px; padding:16px 18px; animation: riseIn .5s ease both; transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease; }
+.stat-card:hover{ transform:translateY(-3px); box-shadow:0 10px 22px rgba(29,43,58,0.1); border-color:var(--teal); }
+.stat-card:nth-child(1){ animation-delay:.05s; }
+.stat-card:nth-child(2){ animation-delay:.12s; }
+.stat-card:nth-child(3){ animation-delay:.19s; }
+.stat-card .num{ font-family:'Oswald',sans-serif; font-size:28px; color:var(--navy); font-weight:700; }
+.stat-card .lbl{ font-size:11.5px; color:#7a7a7a; text-transform:uppercase; letter-spacing:0.5px; margin-top:4px; }
+
+.panel{ background:#fffdf8; border:1px solid var(--line); border-radius:4px; padding:20px 22px; margin-bottom:24px; animation: riseIn .5s ease both; }
+.panel:nth-of-type(1){ animation-delay:.1s; }
+.panel:nth-of-type(2){ animation-delay:.18s; }
+.panel:nth-of-type(3){ animation-delay:.26s; }
+.panel h3{ font-family:'Oswald',sans-serif; font-size:14.5px; color:var(--navy); text-transform:uppercase; letter-spacing:0.5px; margin:0 0 14px; }
+.agg-item{ font-size:13px; color:#444; padding:6px 0; display:flex; justify-content:space-between; border-bottom:1px dotted var(--line); animation: fadeUp .4s ease both; }
+.agg-item .bar-wrap{ flex:1; margin:0 12px; background:var(--teal-soft); border-radius:3px; overflow:hidden; height:8px; align-self:center; }
+.agg-item .bar{ height:100%; width:0%; background:var(--teal); transition:width .7s cubic-bezier(.22,.68,0,1.2); }
+@keyframes fadeUp{ from{ opacity:0; transform:translateY(6px); } to{ opacity:1; transform:translateY(0); } }
+.empty-note{ font-size:12.5px; color:#999; font-style:italic; }
+
+table.resp-table{ width:100%; border-collapse:collapse; font-size:12.5px; }
+table.resp-table th{ text-align:left; font-family:'Oswald',sans-serif; font-size:10.5px; text-transform:uppercase; letter-spacing:0.4px; color:var(--navy-soft); border-bottom:2px solid var(--navy); padding:8px 6px; }
+table.resp-table td{ padding:8px 6px; border-bottom:1px solid var(--line); vertical-align:top; }
+table.resp-table tbody tr{ animation: fadeUp .35s ease both; transition:background .15s ease; }
+table.resp-table tr:hover{ background:var(--teal-soft); }
+.lang-badge{ display:inline-block; font-family:'IBM Plex Mono',monospace; font-size:10.5px; padding:2px 7px; border-radius:10px; border:1px solid var(--line); color:var(--navy-soft); }
+.lang-badge.fr{ border-color:var(--teal); color:var(--teal); }
+.lang-badge.en{ border-color:var(--amber); color:var(--amber); }
+.lang-badge.ar{ border-color:var(--danger); color:var(--danger); }
+.detail-btn{ font-size:12px; padding:5px 11px; border-radius:3px; border:1px solid var(--navy); background:#fff; color:var(--navy); cursor:pointer; transition:background .15s ease; }
+.detail-btn:hover{ background:var(--teal-soft); }
+
+/* modal */
+.modal-overlay{ display:none; position:fixed; inset:0; background:rgba(29,43,58,0.55); z-index:20; align-items:flex-start; justify-content:center; padding:40px 16px; overflow-y:auto; }
+.modal-overlay.show{ display:flex; }
+.modal{ background:var(--paper); border-radius:6px; max-width:640px; width:100%; padding:26px 26px 30px; animation: modalIn .3s cubic-bezier(.22,.68,0,1.15) both; box-shadow:0 30px 60px rgba(0,0,0,0.3); }
+@keyframes modalIn{ from{ opacity:0; transform:translateY(16px) scale(0.98); } to{ opacity:1; transform:translateY(0) scale(1); } }
+.modal-head{ display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; }
+.modal-head h3{ font-family:'Oswald',sans-serif; font-size:16px; color:var(--navy); margin:0; text-transform:uppercase; }
+.modal-close{ background:none; border:none; font-size:20px; color:var(--navy-soft); cursor:pointer; line-height:1; }
+.modal-actions{ margin-bottom:16px; }
+.translate-btn{ font-size:12.5px; padding:8px 14px; border-radius:3px; border:1px solid var(--teal); background:var(--teal-soft); color:var(--teal); cursor:pointer; transition:background .15s ease; }
+.translate-btn:hover{ background:#d5e6e0; }
+.translate-btn:disabled{ opacity:0.6; cursor:wait; }
+.modal-field{ margin-bottom:14px; font-size:13px; }
+.modal-field .k{ font-weight:600; color:var(--navy); display:block; margin-bottom:3px; }
+.modal-field .v{ color:#444; white-space:pre-wrap; }
+.modal-field .translated{ margin-top:6px; padding:8px 10px; background:var(--teal-soft); border-radius:4px; color:var(--navy); font-size:12.5px; display:none; }
+.modal-field .translated.show{ display:block; }
+.modal-field .translated .tag{ font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--teal); display:block; margin-bottom:3px; }
+.actions-row{ display:flex; gap:10px; margin-bottom:20px; flex-wrap:wrap; }
+.actions-row button{ font-size:12.5px; padding:9px 16px; border-radius:3px; border:1px solid var(--navy); background:#fff; color:var(--navy); cursor:pointer; transition:background .15s ease, transform .1s ease; }
+.actions-row button:hover{ background:var(--teal-soft); transform:translateY(-1px); }
+.actions-row button:active{ transform:translateY(0); }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <div class="login-box" id="loginBox">
+    <div class="stamp">Usage interne</div>
+    <h1>Accès admin</h1>
+    <input type="email" id="loginEmail" placeholder="Email">
+    <input type="password" id="loginPassword" placeholder="Mot de passe">
+    <button id="loginBtn">Se connecter</button>
+    <div class="login-err" id="loginErr"></div>
+  </div>
+
+  <div class="dash" id="dash">
+    <header class="dash-head">
+      <div>
+        <h1 class="title">Diagnostic Transit — Tableau de bord</h1>
+        <div class="sub">Département Transit — FTA Logistics · accès restreint</div>
+      </div>
+      <button class="signout" id="signoutBtn">Se déconnecter</button>
+    </header>
+
+    <div class="stat-row">
+      <div class="stat-card"><div class="num" id="statCount">0</div><div class="lbl">Réponses reçues</div></div>
+      <div class="stat-card"><div class="num" id="statEff">—</div><div class="lbl">Efficacité moyenne / 5</div></div>
+      <div class="stat-card"><div class="num" id="statTop">—</div><div class="lbl">Sujet le plus cité</div></div>
+    </div>
+
+    <div class="actions-row">
+      <button id="refreshBtn">Actualiser</button>
+      <button id="exportBtn">Exporter en JSON</button>
+      <button id="exportCsvBtn">Exporter en CSV</button>
+    </div>
+
+    <div class="panel">
+      <h3>Sujet à plus fort impact sur la performance</h3>
+      <div id="aggSujetImpact"><span class="empty-note">Aucune donnée pour l'instant.</span></div>
+    </div>
+
+    <div class="panel">
+      <h3>Top 10 des problèmes les plus cochés (toutes questions à choix multiples)</h3>
+      <div id="paretoList"><span class="empty-note">Aucune donnée pour l'instant.</span></div>
+    </div>
+
+    <div class="panel">
+      <h3>Réponses individuelles</h3>
+      <div style="overflow-x:auto;">
+        <table class="resp-table">
+          <thead><tr><th>Date</th><th>Langue</th><th>Poste</th><th>Ancienneté</th><th>Sujet impact</th><th>Efficacité</th><th>Nom</th><th></th></tr></thead>
+          <tbody id="respTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>Détail de la réponse</h3>
+      <button class="modal-close" id="modalClose">✕</button>
+    </div>
+    <div class="modal-actions">
+      <button class="translate-btn" id="translateBtn">Traduire les réponses en français</button>
+    </div>
+    <div id="modalBody"></div>
+  </div>
+</div>
+
+<script type="module">
+  import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+
+  const SUPABASE_URL = 'https://nujilqlkcarjbjsqmcjv.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im51amlscWxrY2FyamJqc3FtY2p2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQxMjYzNTUsImV4cCI6MjA5OTcwMjM1NX0.e_MnqkgzkuhZUN7nP3gzKjNDexEyxNGG5T5KR7nUbIM';
+
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  const loginBox = document.getElementById('loginBox');
+  const dash = document.getElementById('dash');
+
+  async function checkSession(){
+    const { data: { session } } = await supabase.auth.getSession();
+    if(session){
+      loginBox.style.display = 'none';
+      dash.classList.add('show');
+      loadData();
+    } else {
+      loginBox.style.display = 'block';
+      dash.classList.remove('show');
+    }
+  }
+
+  document.getElementById('loginBtn').addEventListener('click', async ()=>{
+    const email = document.getElementById('loginEmail').value.trim();
+    const password = document.getElementById('loginPassword').value;
+    const errEl = document.getElementById('loginErr');
+    errEl.style.display = 'none';
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if(error){
+      errEl.textContent = "Connexion refusée : " + error.message;
+      errEl.style.display = 'block';
+      return;
+    }
+    checkSession();
+  });
+
+  document.getElementById('signoutBtn').addEventListener('click', async ()=>{
+    await supabase.auth.signOut();
+    checkSession();
+  });
+
+  document.getElementById('refreshBtn').addEventListener('click', async ()=>{
+    const btn = document.getElementById('refreshBtn');
+    const original = btn.textContent;
+    btn.textContent = 'Actualisation…';
+    btn.disabled = true;
+    await loadData();
+    btn.textContent = original;
+    btn.disabled = false;
+  });
+
+  let currentRows = [];
+
+  async function loadData(){
+    const { data, error } = await supabase
+      .from('transit_responses')
+      .select('*')
+      .order('created_at', { ascending:false });
+
+    if(error){
+      console.error(error);
+      return;
+    }
+    currentRows = data || [];
+    render();
+  }
+
+  function animateCount(el, target, decimals=0){
+    const start = 0;
+    const duration = 600;
+    const startTime = performance.now();
+    function step(now){
+      const p = Math.min((now-startTime)/duration, 1);
+      const eased = 1 - Math.pow(1-p, 3);
+      const val = start + (target-start)*eased;
+      el.textContent = decimals ? val.toFixed(decimals) : Math.round(val);
+      if(p < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  }
+
+  function render(){
+    animateCount(document.getElementById('statCount'), currentRows.length);
+
+    const effVals = currentRows.map(r=>r.efficacite).filter(v=>v!=null && !isNaN(v));
+    if(effVals.length){
+      animateCount(document.getElementById('statEff'), effVals.reduce((a,b)=>a+b,0)/effVals.length, 2);
+    } else {
+      document.getElementById('statEff').textContent = '—';
+    }
+
+    const sujetCounts = {};
+    currentRows.forEach(r=>{ if(r.sujet_impact){ sujetCounts[r.sujet_impact] = (sujetCounts[r.sujet_impact]||0)+1; } });
+    const sujetEntries = Object.entries(sujetCounts).sort((a,b)=>b[1]-a[1]);
+    document.getElementById('statTop').textContent = sujetEntries.length ? sujetEntries[0][0] : '—';
+
+    const sujetEl = document.getElementById('aggSujetImpact');
+    sujetEl.innerHTML = sujetEntries.length ? sujetEntries.map(([k,v],i)=>{
+      const pct = Math.round((v/currentRows.length)*100);
+      return `<div class="agg-item" style="animation-delay:${i*0.05}s"><span>${k}</span><span class="bar-wrap"><span class="bar" data-pct="${pct}" style="width:0%"></span></span><span>${v}</span></div>`;
+    }).join('') : '<span class="empty-note">Aucune donnée pour l\'instant.</span>';
+
+    const paretoCounts = {};
+    const arrayCols = ['activites','taches_erreurs','periodes_charge','causes_retard','documents_problematiques',
+      'source_erreurs','type_probleme_outil','departements','acteurs_difficiles','problemes_entrepot'];
+    currentRows.forEach(r=>{
+      arrayCols.forEach(c=>{
+        if(Array.isArray(r[c])){ r[c].forEach(v=>{ paretoCounts[v] = (paretoCounts[v]||0)+1; }); }
+      });
+    });
+    const paretoEntries = Object.entries(paretoCounts).sort((a,b)=>b[1]-a[1]).slice(0,10);
+    document.getElementById('paretoList').innerHTML = paretoEntries.length ? paretoEntries.map(([k,v],i)=>
+      `<div class="agg-item" style="animation-delay:${i*0.04}s"><span><strong>${i+1}.</strong> ${k}</span><span>${v}</span></div>`
+    ).join('') : '<span class="empty-note">Aucune donnée pour l\'instant.</span>';
+
+    const tbody = document.getElementById('respTableBody');
+    tbody.innerHTML = currentRows.map((r,i)=>`
+      <tr style="animation-delay:${Math.min(i*0.03,0.6)}s">
+        <td>${new Date(r.created_at).toLocaleString('fr-FR')}</td>
+        <td><span class="lang-badge ${r.lang || 'fr'}">${(r.lang || 'fr').toUpperCase()}</span></td>
+        <td>${r.poste || '—'}</td>
+        <td>${r.anciennete || '—'}</td>
+        <td>${r.sujet_impact || '—'}</td>
+        <td>${r.efficacite ?? '—'}</td>
+        <td>${r.nom || '<em>anonyme</em>'}</td>
+        <td><button class="detail-btn" data-idx="${i}" onclick="openDetail(${i})">Détails</button></td>
+      </tr>
+    `).join('') || '<tr><td colspan="8" class="empty-note">Aucune réponse pour l\'instant.</td></tr>';
+
+    // trigger bar width transitions after paint
+    requestAnimationFrame(()=>{
+      requestAnimationFrame(()=>{
+        document.querySelectorAll('.bar[data-pct]').forEach(b=>{ b.style.width = b.dataset.pct + '%'; });
+      });
+    });
+  }
+
+  const FREE_TEXT_FIELDS = [
+    ['poste','Poste'], ['etapes_quotidien','Étapes du travail quotidien'], ['taches_chronophages','Tâches chronophages'],
+    ['taches_automatiser','Activités à automatiser'], ['problemes_import_export','Problèmes import/export'],
+    ['incident_outil','Incident lié aux outils'], ['risque_non_pris_au_serieux','Risque sous-estimé'],
+    ['exemple_dysfonctionnement','Exemple de dysfonctionnement'], ['amelioration_externe','Amélioration relation externe'],
+    ['amelioration_prioritaire','Amélioration prioritaire'], ['un_seul_probleme','Un seul problème à régler'],
+    ['nom','Nom']
+  ];
+  const CHOICE_FIELDS = [
+    ['anciennete','Ancienneté'], ['activites','Activités'], ['taches_erreurs','Tâches à erreurs'], ['periodes_charge','Périodes de charge'],
+    ['etape_blocage','Étape de blocage'], ['causes_retard','Causes de retard'], ['documents_problematiques','Documents problématiques'],
+    ['source_erreurs','Source des erreurs'], ['freq_erreurs','Fréquence erreurs doc.'], ['type_probleme_outil','Type de problème outil'],
+    ['departements','Départements'], ['friction','Point de friction'], ['acteurs_difficiles','Acteurs externes difficiles'],
+    ['problemes_entrepot','Problèmes entrepôt'], ['freq_entrepot','Fréquence problèmes entrepôt'],
+    ['sujet_impact','Sujet à plus fort impact'], ['efficacite','Efficacité (1-5)']
+  ];
+
+  let currentDetailRow = null;
+
+  window.openDetail = function(idx){
+    currentDetailRow = currentRows[idx];
+    const r = currentDetailRow;
+    const lang = r.lang || 'fr';
+
+    let html = `<div class="modal-field"><span class="k">Réf. / Date</span><span class="v">${r.doc_ref || '—'} · ${new Date(r.created_at).toLocaleString('fr-FR')} · langue : ${lang.toUpperCase()}</span></div>`;
+
+    CHOICE_FIELDS.forEach(([key,label])=>{
+      const val = r[key];
+      const display = Array.isArray(val) ? (val.length ? val.join(', ') : '—') : (val ?? '—');
+      html += `<div class="modal-field"><span class="k">${label}</span><span class="v">${display}</span></div>`;
+    });
+
+    FREE_TEXT_FIELDS.forEach(([key,label])=>{
+      const val = (r[key] || '').trim();
+      if(!val) return;
+      html += `<div class="modal-field" data-field="${key}"><span class="k">${label}</span><span class="v">${val}</span><div class="translated" id="tr-${key}"><span class="tag">Traduit automatiquement (FR)</span><span class="txt"></span></div></div>`;
+    });
+
+    document.getElementById('modalBody').innerHTML = html;
+    document.getElementById('translateBtn').style.display = (lang === 'fr') ? 'none' : 'inline-block';
+    document.getElementById('translateBtn').disabled = false;
+    document.getElementById('translateBtn').textContent = 'Traduire les réponses en français';
+    document.getElementById('modalOverlay').classList.add('show');
+  };
+
+  document.getElementById('modalClose').addEventListener('click', ()=>{
+    document.getElementById('modalOverlay').classList.remove('show');
+  });
+  document.getElementById('modalOverlay').addEventListener('click', (e)=>{
+    if(e.target.id === 'modalOverlay') document.getElementById('modalOverlay').classList.remove('show');
+  });
+
+  async function translateText(text, sourceLang){
+    const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${sourceLang}|fr`;
+    const res = await fetch(url);
+    const json = await res.json();
+    return json?.responseData?.translatedText || null;
+  }
+
+  document.getElementById('translateBtn').addEventListener('click', async ()=>{
+    if(!currentDetailRow) return;
+    const lang = currentDetailRow.lang || 'fr';
+    if(lang === 'fr') return;
+    const btn = document.getElementById('translateBtn');
+    btn.disabled = true;
+    btn.textContent = 'Traduction en cours…';
+
+    for(const [key] of FREE_TEXT_FIELDS){
+      const val = (currentDetailRow[key] || '').trim();
+      if(!val) continue;
+      const box = document.getElementById('tr-'+key);
+      if(!box) continue;
+      try{
+        const translated = await translateText(val, lang);
+        if(translated){
+          box.querySelector('.txt').textContent = translated;
+          box.classList.add('show');
+        }
+      } catch(e){
+        console.error('Translation failed for', key, e);
+      }
+    }
+    btn.disabled = false;
+    btn.textContent = 'Traduire les réponses en français';
+  });
+
+  document.getElementById('exportBtn').addEventListener('click', ()=>{
+    const blob = new Blob([JSON.stringify(currentRows, null, 2)], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = 'diagnostic-transit-reponses.json'; a.click();
+    URL.revokeObjectURL(url);
+  });
+
+  document.getElementById('exportCsvBtn').addEventListener('click', ()=>{
+    if(!currentRows.length) return;
+    const cols = Object.keys(currentRows[0]);
+    const escape = v => {
+      if(v == null) return '';
+      if(Array.isArray(v)) v = v.join('; ');
+      const s = String(v).replace(/"/g,'""');
+      return `"${s}"`;
+    };
+    const csv = [cols.join(',')].concat(
+      currentRows.map(r=>cols.map(c=>escape(r[c])).join(','))
+    ).join('\n');
+    const blob = new Blob([csv], {type:'text/csv'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = 'diagnostic-transit-reponses.csv'; a.click();
+    URL.revokeObjectURL(url);
+  });
+
+  checkSession();
+</script>
+
+</body>
+</html>

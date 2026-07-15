@@ -68,6 +68,8 @@ table.resp-table tr:hover{ background:var(--teal-soft); }
 .lang-badge.ar{ border-color:var(--danger); color:var(--danger); }
 .detail-btn{ font-size:12px; padding:5px 11px; border-radius:3px; border:1px solid var(--navy); background:#fff; color:var(--navy); cursor:pointer; transition:background .15s ease; }
 .detail-btn:hover{ background:var(--teal-soft); }
+.delete-btn{ font-size:12px; padding:5px 11px; border-radius:3px; border:1px solid var(--danger); background:#fff; color:var(--danger); cursor:pointer; transition:background .15s ease; margin-left:6px; }
+.delete-btn:hover{ background:#f6e6e2; }
 
 /* modal */
 .modal-overlay{ display:none; position:fixed; inset:0; background:rgba(29,43,58,0.55); z-index:20; align-items:flex-start; justify-content:center; padding:40px 16px; overflow-y:auto; }
@@ -125,6 +127,7 @@ table.resp-table tr:hover{ background:var(--teal-soft); }
       <button id="refreshBtn">Actualiser</button>
       <button id="exportBtn">Exporter en JSON</button>
       <button id="exportCsvBtn">Exporter en CSV</button>
+      <button id="deleteAllBtn" style="border-color:var(--danger); color:var(--danger);">Tout supprimer</button>
     </div>
 
     <div class="panel">
@@ -158,6 +161,7 @@ table.resp-table tr:hover{ background:var(--teal-soft); }
     </div>
     <div class="modal-actions">
       <button class="translate-btn" id="translateBtn">Traduire les réponses en français</button>
+      <button class="delete-btn" id="deleteBtn" style="margin-left:8px;">Supprimer cette réponse</button>
     </div>
     <div id="modalBody"></div>
   </div>
@@ -289,7 +293,7 @@ table.resp-table tr:hover{ background:var(--teal-soft); }
         <td>${r.sujet_impact || '—'}</td>
         <td>${r.efficacite ?? '—'}</td>
         <td>${r.nom || '<em>anonyme</em>'}</td>
-        <td><button class="detail-btn" data-idx="${i}" onclick="openDetail(${i})">Détails</button></td>
+        <td><button class="detail-btn" data-idx="${i}" onclick="openDetail(${i})">Détails</button><button class="delete-btn" data-idx="${i}" onclick="quickDelete('${r.id}')">Suppr.</button></td>
       </tr>
     `).join('') || '<tr><td colspan="8" class="empty-note">Aucune réponse pour l\'instant.</td></tr>';
 
@@ -385,6 +389,34 @@ table.resp-table tr:hover{ background:var(--teal-soft); }
     }
     btn.disabled = false;
     btn.textContent = 'Traduire les réponses en français';
+  });
+
+  window.quickDelete = async function(id){
+    if(!confirm('Supprimer définitivement cette réponse ? Cette action est irréversible.')) return;
+    const { error } = await supabase.from('transit_responses').delete().eq('id', id);
+    if(error){ alert('Erreur lors de la suppression : ' + error.message); return; }
+    loadData();
+  };
+
+  document.getElementById('deleteBtn').addEventListener('click', async ()=>{
+    if(!currentDetailRow) return;
+    if(!confirm('Supprimer définitivement cette réponse ? Cette action est irréversible.')) return;
+    const { error } = await supabase.from('transit_responses').delete().eq('id', currentDetailRow.id);
+    if(error){ alert('Erreur lors de la suppression : ' + error.message); return; }
+    document.getElementById('modalOverlay').classList.remove('show');
+    loadData();
+  });
+
+  document.getElementById('deleteAllBtn').addEventListener('click', async ()=>{
+    if(!currentRows.length){ return; }
+    const confirm1 = confirm(`Supprimer définitivement les ${currentRows.length} réponse(s) enregistrée(s) ? Cette action est irréversible.`);
+    if(!confirm1) return;
+    const typed = prompt('Tape "SUPPRIMER" pour confirmer.');
+    if(typed !== 'SUPPRIMER') return;
+    const ids = currentRows.map(r=>r.id);
+    const { error } = await supabase.from('transit_responses').delete().in('id', ids);
+    if(error){ alert('Erreur lors de la suppression : ' + error.message); return; }
+    loadData();
   });
 
   document.getElementById('exportBtn').addEventListener('click', ()=>{

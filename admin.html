@@ -1,451 +1,836 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Admin — Diagnostic Transit</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Collaboration avec le département Transit</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Source+Sans+3:wght@400;500;600&family=Noto+Sans+Arabic:wght@400;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
-:root{
-  --ink:#1a1a1a; --paper:#f6f3ea; --navy:#1d2b3a; --navy-soft:#2a3d52;
-  --teal:#2f6f62; --teal-soft:#e4ede9; --amber:#c1852f; --line:#d8d2c2; --danger:#a13d2b;
+:root {
+  --bg: #F2F4F8; --surface: #FFFFFF; --ink: #15223A; --muted: #566277; --line: #D3DAE6;
+  --accent: #17766F; --accent-ink: #FFFFFF; --accent-soft: #E0F0EE;
+  --error: #B3261E; --error-soft: #FBE9E7;
+  --hero: #15223A; --hero-ink: #FFFFFF; --hero-muted: #C4CEE0;
+  --display: "Bricolage Grotesque", "Trebuchet MS", "Segoe UI", sans-serif;
+  --body: "Source Sans 3", "Segoe UI", system-ui, -apple-system, Arial, sans-serif;
+  --arabic: "Noto Sans Arabic", "Segoe UI", sans-serif;
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
-*{box-sizing:border-box;}
-body{ margin:0; background:var(--paper); color:var(--ink); font-family:'IBM Plex Sans',sans-serif; font-size:15px; line-height:1.55; }
-.wrap{ max-width:900px; margin:0 auto; padding:40px 20px 80px; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg:#0E1524; --surface:#162035; --ink:#E9EDF5; --muted:#9AA6BA; --line:#2A3752;
+    --accent:#4FB8AE; --accent-ink:#0B1A19; --accent-soft:#16332F;
+    --error:#FF8A80; --error-soft:#3A1E1E;
+    --hero:#1B2C4D; --hero-ink:#FFFFFF; --hero-muted:#B6C2DA;
+  }
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: env(safe-area-inset-top, 0px); }
+body {
+  margin: 0; min-height: 100%; background: var(--bg); color: var(--ink);
+  font-family: var(--body); font-size: 17px; line-height: 1.5; -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+html[dir="rtl"] body, [lang="ar"] { font-family: var(--arabic); }
+.screen { min-height: 100dvh; display: none; flex-direction: column; }
+.screen.active { display: flex; }
+.wrap { max-width: 760px; margin: 0 auto; width: 100%; }
 
-/* login */
-.login-box{ max-width:380px; margin:120px auto; background:#fffdf8; border:1px solid var(--line); border-radius:6px; padding:34px; text-align:center; animation: loginIn .5s ease both; }
-@keyframes loginIn{ from{ opacity:0; transform:translateY(10px) scale(0.98); } to{ opacity:1; transform:translateY(0) scale(1); } }
-.login-box .stamp{ display:inline-block; border:2px solid var(--amber); color:var(--amber); font-family:'Oswald',sans-serif; font-size:11px; font-weight:600; letter-spacing:1.5px; padding:6px 10px; transform:rotate(4deg); border-radius:3px; text-transform:uppercase; margin-bottom:18px; animation: stampIn .5s cubic-bezier(.34,1.56,.64,1) .2s both; }
-@keyframes stampIn{ from{ opacity:0; transform:rotate(-14deg) scale(0.7); } to{ opacity:1; transform:rotate(4deg) scale(1); } }
-.login-box h1{ font-family:'Oswald',sans-serif; font-size:20px; color:var(--navy); margin:0 0 22px; text-transform:uppercase; }
-.login-box input{ width:100%; margin-bottom:12px; padding:11px 12px; border:1px solid var(--line); border-radius:3px; font-size:14px; background:#fff; transition:border-color .15s ease, box-shadow .15s ease; }
-.login-box input:focus{ outline:none; border-color:var(--teal); box-shadow:0 0 0 3px var(--teal-soft); }
-.login-box button{ width:100%; padding:12px; border:none; border-radius:3px; background:var(--navy); color:#fdfbf5; font-family:'Oswald',sans-serif; font-weight:600; letter-spacing:0.5px; text-transform:uppercase; cursor:pointer; box-shadow:0 2px 0 rgba(29,43,58,0.25); transition:background .15s ease, transform .1s ease, box-shadow .15s ease; }
-.login-box button:hover{ background:var(--navy-soft); transform:translateY(-1px); box-shadow:0 4px 10px rgba(29,43,58,0.22); }
-.login-box button:active{ transform:translateY(0); box-shadow:0 1px 0 rgba(29,43,58,0.25); }
-.login-err{ color:var(--danger); font-size:12.5px; margin-top:10px; display:none; }
+/* ---------- Écran Robot ---------- */
+#screen-robot, #screen-welcome {
+  align-items: center; justify-content: center; padding: 40px 20px; text-align: center; background: var(--hero); color: var(--hero-ink);
+}
 
-/* dashboard */
-.dash{ display:none; }
-.dash.show{ display:block; }
-header.dash-head{ display:flex; justify-content:space-between; align-items:flex-start; border-bottom:3px solid var(--navy); padding-bottom:18px; margin-bottom:28px; flex-wrap:wrap; gap:12px; animation: riseIn .5s ease both; }
-@keyframes riseIn{ from{ opacity:0; transform:translateY(10px); } to{ opacity:1; transform:translateY(0); } }
-h1.title{ font-family:'Oswald',sans-serif; font-size:24px; color:var(--navy); text-transform:uppercase; margin:0 0 4px; }
-.sub{ font-size:12.5px; color:#7a7a7a; font-family:'IBM Plex Mono',monospace; }
-.signout{ background:none; border:1px solid var(--navy); color:var(--navy); padding:8px 16px; border-radius:3px; cursor:pointer; font-size:13px; transition:background .15s ease, transform .1s ease; }
-.signout:hover{ background:var(--teal-soft); transform:translateY(-1px); }
+.bot-avatar-container {
+  position: relative;
+  width: 150px; height: 138px;
+  margin: 0 auto 14px;
+  display: flex; align-items: flex-end; justify-content: center;
+}
 
-.stat-row{ display:flex; gap:14px; flex-wrap:wrap; margin-bottom:32px; }
-.stat-card{ flex:1; min-width:140px; background:#fffdf8; border:1px solid var(--line); border-radius:4px; padding:16px 18px; animation: riseIn .5s ease both; transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease; }
-.stat-card:hover{ transform:translateY(-3px); box-shadow:0 10px 22px rgba(29,43,58,0.1); border-color:var(--teal); }
-.stat-card:nth-child(1){ animation-delay:.05s; }
-.stat-card:nth-child(2){ animation-delay:.12s; }
-.stat-card:nth-child(3){ animation-delay:.19s; }
-.stat-card .num{ font-family:'Oswald',sans-serif; font-size:28px; color:var(--navy); font-weight:700; }
-.stat-card .lbl{ font-size:11.5px; color:#7a7a7a; text-transform:uppercase; letter-spacing:0.5px; margin-top:4px; }
+.bot-avatar-bg {
+  position: absolute;
+  left: 50%; top: 4px; transform: translateX(-50%);
+  width: 112px; height: 112px;
+  border-radius: 50%;
+  background: var(--accent);
+  opacity: 0.18;
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
 
-.panel{ background:#fffdf8; border:1px solid var(--line); border-radius:4px; padding:20px 22px; margin-bottom:24px; animation: riseIn .5s ease both; }
-.panel:nth-of-type(1){ animation-delay:.1s; }
-.panel:nth-of-type(2){ animation-delay:.18s; }
-.panel:nth-of-type(3){ animation-delay:.26s; }
-.panel h3{ font-family:'Oswald',sans-serif; font-size:14.5px; color:var(--navy); text-transform:uppercase; letter-spacing:0.5px; margin:0 0 14px; }
-.agg-item{ font-size:13px; color:#444; padding:6px 0; display:flex; justify-content:space-between; border-bottom:1px dotted var(--line); animation: fadeUp .4s ease both; }
-.agg-item .bar-wrap{ flex:1; margin:0 12px; background:var(--teal-soft); border-radius:3px; overflow:hidden; height:8px; align-self:center; }
-.agg-item .bar{ height:100%; width:0%; background:var(--teal); transition:width .7s cubic-bezier(.22,.68,0,1.2); }
-@keyframes fadeUp{ from{ opacity:0; transform:translateY(6px); } to{ opacity:1; transform:translateY(0); } }
-.empty-note{ font-size:12.5px; color:#999; font-style:italic; }
+/* ---------- Robot "Transo" ---------- */
+.volt { position: relative; width: 130px; height: 128px; animation: float 3s ease-in-out infinite; }
+.volt-antenna { position: absolute; top: 0; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; }
+.volt-antenna-tip { width: 9px; height: 9px; background: #FFB703; border-radius: 50%; box-shadow: 0 0 8px #FFB703; animation: pulse-dot 1.6s ease-in-out infinite; }
+.volt-antenna-rod { width: 3px; height: 14px; background: var(--surface); }
+.volt-head3d { position: absolute; top: 24px; left: 50%; transform: translateX(-50%); perspective: 400px; }
+.volt-head { position: relative; width: 92px; height: 64px; background: var(--surface); border-radius: 15px; display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 18px rgba(0,0,0,.28); transition: transform .35s ease; }
+.volt-ear { position: absolute; top: 18px; width: 7px; height: 20px; background: var(--surface); border-radius: 4px; }
+.volt-ear--l { left: -7px; }
+.volt-ear--r { right: -7px; }
+.volt-screen { width: 64px; height: 33px; background: var(--hero); border-radius: 7px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; }
+.volt-eyes { display: flex; gap: 7px; }
+.volt-eye { width: 9px; height: 9px; background: #5EEAD4; border-radius: 50%; position: relative; transition: all .3s ease; }
+.volt-eye::after { content: ""; position: absolute; inset: 0; margin: auto; width: 3.5px; height: 3.5px; background: #0F766E; border-radius: 50%; transform: translateX(var(--pupil-x, 0px)); transition: transform .08s linear; }
+.volt-screen-text { color: rgba(255,255,255,.35); font-size: 6px; font-weight: 800; letter-spacing: 1.5px; font-family: var(--body); }
+.volt-hands { position: absolute; top: 78px; left: 50%; transform: translateX(-50%); width: 118px; display: flex; justify-content: space-between; }
+.volt-hand { width: 16px; height: 11px; background: var(--surface); border-radius: 6px 6px 3px 3px; }
+.volt-feet { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 100px; display: flex; justify-content: space-between; }
+.volt-foot { width: 28px; height: 10px; background: var(--surface); border-radius: 0 0 7px 7px; }
 
-table.resp-table{ width:100%; border-collapse:collapse; font-size:12.5px; }
-table.resp-table th{ text-align:left; font-family:'Oswald',sans-serif; font-size:10.5px; text-transform:uppercase; letter-spacing:0.4px; color:var(--navy-soft); border-bottom:2px solid var(--navy); padding:8px 6px; }
-table.resp-table td{ padding:8px 6px; border-bottom:1px solid var(--line); vertical-align:top; }
-table.resp-table tbody tr{ animation: fadeUp .35s ease both; transition:background .15s ease; }
-table.resp-table tr:hover{ background:var(--teal-soft); }
-.lang-badge{ display:inline-block; font-family:'IBM Plex Mono',monospace; font-size:10.5px; padding:2px 7px; border-radius:10px; border:1px solid var(--line); color:var(--navy-soft); }
-.lang-badge.fr{ border-color:var(--teal); color:var(--teal); }
-.lang-badge.en{ border-color:var(--amber); color:var(--amber); }
-.lang-badge.ar{ border-color:var(--danger); color:var(--danger); }
-.detail-btn{ font-size:12px; padding:5px 11px; border-radius:3px; border:1px solid var(--navy); background:#fff; color:var(--navy); cursor:pointer; transition:background .15s ease; }
-.detail-btn:hover{ background:var(--teal-soft); }
-.delete-btn{ font-size:12px; padding:5px 11px; border-radius:3px; border:1px solid var(--danger); background:#fff; color:var(--danger); cursor:pointer; transition:background .15s ease; margin-left:6px; }
-.delete-btn:hover{ background:#f6e6e2; }
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+@keyframes pulse {
+  0%, 100% { transform: translateX(-50%) scale(1); opacity: 0.18; }
+  50% { transform: translateX(-50%) scale(1.15); opacity: 0.3; }
+}
+@keyframes pulse-dot {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.3); opacity: .7; }
+}
 
-/* modal */
-.modal-overlay{ display:none; position:fixed; inset:0; background:rgba(29,43,58,0.55); z-index:20; align-items:flex-start; justify-content:center; padding:40px 16px; overflow-y:auto; }
-.modal-overlay.show{ display:flex; }
-.modal{ background:var(--paper); border-radius:6px; max-width:640px; width:100%; padding:26px 26px 30px; animation: modalIn .3s cubic-bezier(.22,.68,0,1.15) both; box-shadow:0 30px 60px rgba(0,0,0,0.3); }
-@keyframes modalIn{ from{ opacity:0; transform:translateY(16px) scale(0.98); } to{ opacity:1; transform:translateY(0) scale(1); } }
-.modal-head{ display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; }
-.modal-head h3{ font-family:'Oswald',sans-serif; font-size:16px; color:var(--navy); margin:0; text-transform:uppercase; }
-.modal-close{ background:none; border:none; font-size:20px; color:var(--navy-soft); cursor:pointer; line-height:1; }
-.modal-actions{ margin-bottom:16px; }
-.translate-btn{ font-size:12.5px; padding:8px 14px; border-radius:3px; border:1px solid var(--teal); background:var(--teal-soft); color:var(--teal); cursor:pointer; transition:background .15s ease; }
-.translate-btn:hover{ background:#d5e6e0; }
-.translate-btn:disabled{ opacity:0.6; cursor:wait; }
-.modal-field{ margin-bottom:14px; font-size:13px; }
-.modal-field .k{ font-weight:600; color:var(--navy); display:block; margin-bottom:3px; }
-.modal-field .v{ color:#444; white-space:pre-wrap; }
-.modal-field .translated{ margin-top:6px; padding:8px 10px; background:var(--teal-soft); border-radius:4px; color:var(--navy); font-size:12.5px; display:none; }
-.modal-field .translated.show{ display:block; }
-.modal-field .translated .tag{ font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--teal); display:block; margin-bottom:3px; }
-.actions-row{ display:flex; gap:10px; margin-bottom:20px; flex-wrap:wrap; }
-.actions-row button{ font-size:12.5px; padding:9px 16px; border-radius:3px; border:1px solid var(--navy); background:#fff; color:var(--navy); cursor:pointer; transition:background .15s ease, transform .1s ease; }
-.actions-row button:hover{ background:var(--teal-soft); transform:translateY(-1px); }
-.actions-row button:active{ transform:translateY(0); }
+.bubble {
+  background: var(--surface); color: var(--ink); border-radius: 18px; padding: 20px 24px;
+  max-width: 440px; margin: 0 auto 24px; font-size: 1.08rem; position: relative;
+  box-shadow: 0 12px 30px rgba(0,0,0,0.15);
+  font-weight: 500;
+  line-height: 1.45;
+}
+.bubble::after {
+  content: ""; position: absolute; left: 50%; top: -9px; transform: translateX(-50%);
+  border: 9px solid transparent; border-bottom-color: var(--surface);
+}
+.bot-name { 
+  font-family: var(--display); 
+  font-weight: 700; 
+  font-size: 1.8rem; 
+  margin: 0 0 2px; 
+  letter-spacing: -0.01em;
+  background: linear-gradient(180deg, #FFFFFF 0%, var(--hero-muted) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.bot-role { color: var(--hero-muted); font-size: .95rem; margin: 0 0 24px; font-weight: 500; }
+.name-input {
+  width: 100%; max-width: 340px; font: inherit; font-size: 1.05rem; text-align: center;
+  padding: 14px 18px; border-radius: 14px; border: 1.5px solid var(--line); background: var(--surface); color: var(--ink);
+  margin: 0 auto 20px; display: block;
+  transition: all 0.2s ease;
+}
+.name-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px var(--accent-soft);
+}
+.lang-row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-bottom: 24px; }
+.lang-btn {
+  font: inherit; font-weight: 600; padding: 10px 20px; border-radius: 999px; border: 1.5px solid var(--line);
+  background: rgba(255,255,255,0.05); color: var(--hero-ink); cursor: pointer; transition: all .2s ease;
+}
+.lang-btn:hover { background: rgba(255,255,255,0.12); }
+.lang-btn[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.cta {
+  font: inherit; font-weight: 700; padding: 15px 36px; border-radius: 999px; border: none;
+  background: var(--accent); color: var(--accent-ink); cursor: pointer; font-size: 1.05rem;
+  box-shadow: 0 4px 14px rgba(23, 118, 111, 0.4); transition: all 0.2s ease;
+}
+.cta:disabled { opacity: .4; cursor: not-allowed; box-shadow: none; }
+.cta:not(:disabled):hover { filter: brightness(1.1); transform: translateY(-1px); }
+
+/* ---------- Écran chargement ---------- */
+#screen-loader { align-items: center; justify-content: center; background: var(--hero); color: var(--hero-ink); }
+.loader-pct {
+  font-family: var(--display); font-weight: 700; font-size: clamp(3.5rem, 16vw, 6rem);
+  letter-spacing: -0.02em; font-variant-numeric: tabular-nums;
+}
+.loader-msg { color: var(--hero-muted); margin-top: 6px; font-size: .98rem; }
+.loader-track { width: 200px; height: 4px; background: rgba(255,255,255,.18); border-radius: 2px; margin-top: 22px; overflow: hidden; }
+.loader-fill { height: 100%; width: 0%; background: var(--accent); transition: width .2s linear; }
+
+/* ---------- Progress / form ---------- */
+.progress { position: sticky; top: 0; z-index: 5; background: var(--bg); border-bottom: 1px solid var(--line); padding: 12px 20px; }
+.progress .wrap { display: flex; align-items: center; gap: 14px; }
+.track { flex: 1; height: 8px; border-radius: 4px; background: var(--line); overflow: hidden; }
+.fill { height: 100%; width: 0; background: var(--accent); transition: width .25s ease; }
+.count { font-size: .9rem; color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; font-weight: 600; }
+#screen-form main { padding: 28px 20px 72px; }
+.hero-mini { background: var(--hero); color: var(--hero-ink); padding: 32px 20px 42px; }
+.hero-mini h1 { font-family: var(--display); font-weight: 700; font-size: clamp(1.5rem, 5vw, 2.1rem); margin: 0 0 8px; }
+.hero-mini p { margin: 0; color: var(--hero-muted); max-width: 62ch; }
+.section { margin-bottom: 32px; }
+.section h2 { font-family: var(--display); font-weight: 600; font-size: 1.35rem; margin: 0 0 14px; padding-inline-start: 12px; border-inline-start: 5px solid var(--accent); }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 2px 8px rgba(0,0,0,0.02); }
+.q { padding: 22px 22px 24px; }
+.q + .q { border-top: 1px solid var(--line); }
+.qlabel { margin: 0 0 4px; font-weight: 600; font-size: 1.05rem; line-height: 1.4; }
+.qnum { color: var(--accent); font-family: var(--display); font-weight: 700; margin-inline-end: 6px; }
+.hint { margin: 0 0 12px; color: var(--muted); font-size: .9rem; }
+.qlabel + .opts, .qlabel + textarea { margin-top: 12px; }
+.opts { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 10px; }
+.opts.scale { grid-template-columns: repeat(auto-fit, minmax(128px, 1fr)); }
+.opt { position: relative; display: flex; align-items: center; gap: 10px; padding: 12px 14px; border: 1.5px solid var(--line); border-radius: 10px; background: var(--surface); cursor: pointer; line-height: 1.3; transition: border-color .15s ease, background-color .15s ease; }
+.opt:hover { border-color: var(--accent); }
+.opt input { position: absolute; opacity: 0; width: 1px; height: 1px; margin: 0; }
+.mark { flex: none; width: 20px; height: 20px; border: 2px solid var(--muted); background: var(--surface); position: relative; }
+.radio .mark { border-radius: 50%; }
+.check .mark { border-radius: 5px; }
+.mark::after { content: ""; position: absolute; opacity: 0; }
+.radio .mark::after { inset: 3px; border-radius: 50%; background: var(--accent-ink); }
+.check .mark::after { left: 5px; top: 1px; width: 5px; height: 10px; border: solid var(--accent-ink); border-width: 0 2px 2px 0; transform: rotate(45deg); }
+[dir="rtl"] .check .mark::after { left: auto; right: 5px; transform: rotate(-45deg) scaleX(-1); }
+.opt input:checked + .mark { background: var(--accent); border-color: var(--accent); }
+.opt input:checked + .mark::after { opacity: 1; }
+.opt:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
+.opt input:focus-visible + .mark { outline: 3px solid var(--accent); outline-offset: 2px; }
+.other, textarea { width: 100%; font: inherit; color: var(--ink); background: var(--surface); border: 1.5px solid var(--line); border-radius: 10px; padding: 12px 14px; }
+.other { margin-top: 10px; }
+.other[hidden] { display: none; }
+textarea { min-height: 120px; resize: vertical; line-height: 1.5; }
+.other:focus-visible, textarea:focus-visible { outline: 3px solid var(--accent); outline-offset: 1px; border-color: var(--accent); }
+.err { display: none; margin: 10px 0 0; color: var(--error); font-size: .92rem; font-weight: 600; }
+.q.invalid { background: var(--error-soft); border-radius: 10px; }
+.q.invalid .err { display: block; }
+.q.invalid .opt { border-color: var(--error); }
+.actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 12px; }
+button.plain { font: inherit; font-weight: 600; cursor: pointer; border-radius: 10px; padding: 12px 24px; border: 1.5px solid var(--accent); transition: all 0.2s ease; }
+.primary { background: var(--accent); color: var(--accent-ink); }
+.primary:hover { filter: brightness(1.08); }
+.secondary { background: transparent; color: var(--accent); }
+.secondary:hover { background: var(--accent-soft); }
+.ghost { background: transparent; border-color: transparent; color: var(--muted); padding-inline: 8px; }
+.ghost:hover { color: var(--ink); text-decoration: underline; }
+.status { min-height: 1.4em; margin: 14px 0 0; font-size: .95rem; color: var(--muted); }
+.status.bad { color: var(--error); font-weight: 600; }
+
+/* ---------- Écran Merci / Partage ---------- */
+#screen-thanks { align-items: center; justify-content: center; padding: 40px 20px; text-align: center; }
+.check-badge { width: 76px; height: 76px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 38px; margin: 0 auto 20px; }
+.thanks-title { font-family: var(--display); font-weight: 700; font-size: 1.8rem; margin: 0 0 8px; }
+.thanks-lead { color: var(--muted); max-width: 52ch; margin: 0 auto 28px; }
+.share-card { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 24px; max-width: 440px; margin: 0 auto; box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
+.share-card p { margin: 0 0 18px; color: var(--muted); font-size: .98rem; }
+.share-actions { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+
+[hidden] { display: none !important; }
+@media (max-width: 520px) {
+  body { font-size: 16px; }
+  .q { padding: 18px 16px 20px; }
+  .opts, .opts.scale { grid-template-columns: 1fr; }
+  button.plain { width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) { 
+  html { scroll-behavior: auto; } 
+  .fill, .opt, .volt, .volt-antenna-tip, .bot-avatar-bg { transition: none; animation: none; } 
+}
 </style>
 </head>
 <body>
 
-<div class="wrap">
-
-  <div class="login-box" id="loginBox">
-    <div class="stamp">Usage interne</div>
-    <h1>Accès admin</h1>
-    <input type="email" id="loginEmail" placeholder="Email">
-    <input type="password" id="loginPassword" placeholder="Mot de passe">
-    <button id="loginBtn">Se connecter</button>
-    <div class="login-err" id="loginErr"></div>
-  </div>
-
-  <div class="dash" id="dash">
-    <header class="dash-head">
-      <div>
-        <h1 class="title">Diagnostic Transit — Tableau de bord</h1>
-        <div class="sub">Département Transit — FTA Logistics · accès restreint</div>
-      </div>
-      <button class="signout" id="signoutBtn">Se déconnecter</button>
-    </header>
-
-    <div class="stat-row">
-      <div class="stat-card"><div class="num" id="statCount">0</div><div class="lbl">Réponses reçues</div></div>
-      <div class="stat-card"><div class="num" id="statEff">—</div><div class="lbl">Efficacité moyenne / 5</div></div>
-      <div class="stat-card"><div class="num" id="statTop">—</div><div class="lbl">Sujet le plus cité</div></div>
-    </div>
-
-    <div class="actions-row">
-      <button id="refreshBtn">Actualiser</button>
-      <button id="exportBtn">Exporter en JSON</button>
-      <button id="exportCsvBtn">Exporter en CSV</button>
-      <button id="deleteAllBtn" style="border-color:var(--danger); color:var(--danger);">Tout supprimer</button>
-    </div>
-
-    <div class="panel">
-      <h3>Sujet à plus fort impact sur la performance</h3>
-      <div id="aggSujetImpact"><span class="empty-note">Aucune donnée pour l'instant.</span></div>
-    </div>
-
-    <div class="panel">
-      <h3>Top 10 des problèmes les plus cochés (toutes questions à choix multiples)</h3>
-      <div id="paretoList"><span class="empty-note">Aucune donnée pour l'instant.</span></div>
-    </div>
-
-    <div class="panel">
-      <h3>Réponses individuelles</h3>
-      <div style="overflow-x:auto;">
-        <table class="resp-table">
-          <thead><tr><th>Date</th><th>Langue</th><th>Poste</th><th>Ancienneté</th><th>Sujet impact</th><th>Efficacité</th><th>Nom</th><th></th></tr></thead>
-          <tbody id="respTableBody"></tbody>
-        </table>
+<!-- ============ ÉCRAN 1 : LE ROBOT ============ -->
+<section id="screen-robot" class="screen active">
+  <div class="wrap">
+    <div class="bot-avatar-container">
+      <div class="bot-avatar-bg"></div>
+      <div class="volt" id="robot-body" aria-hidden="true">
+        <div class="volt-antenna"><span class="volt-antenna-tip"></span><span class="volt-antenna-rod"></span></div>
+        <div class="volt-head3d">
+          <div class="volt-head" id="robot-head">
+            <span class="volt-ear volt-ear--l"></span>
+            <span class="volt-ear volt-ear--r"></span>
+            <div class="volt-screen">
+              <div class="volt-eyes" id="robot-eyes"><div class="volt-eye"></div><div class="volt-eye"></div></div>
+              <span class="volt-screen-text">Fabrice</span>
+            </div>
+          </div>
+        </div>
+        <div class="volt-hands"><div class="volt-hand"></div><div class="volt-hand"></div></div>
+        <div class="volt-feet"><div class="volt-foot"></div><div class="volt-foot"></div></div>
       </div>
     </div>
-  </div>
-
-</div>
-
-<div class="modal-overlay" id="modalOverlay">
-  <div class="modal">
-    <div class="modal-head">
-      <h3>Détail de la réponse</h3>
-      <button class="modal-close" id="modalClose">✕</button>
+    <p class="bot-name" id="bot-name-label">Fabrice</p>
+    <p class="bot-role" id="bot-role-label">Assistant du questionnaire</p>
+    <div class="bubble" id="bot-bubble">Bonjour ! Avant de commencer, comment puis-je vous appeler ?</div>
+    <input class="name-input" id="participant-name" type="text" placeholder="Votre prénom" autocomplete="off" maxlength="60">
+    <p class="bot-role" id="lang-question" style="margin-bottom:12px;">Dans quelle langue préférez-vous répondre ?</p>
+    <div class="lang-row" id="lang-row">
+      <button type="button" class="lang-btn" data-lang="fr" aria-pressed="true">Français</button>
+      <button type="button" class="lang-btn" data-lang="en" aria-pressed="false">English</button>
+      <button type="button" class="lang-btn" data-lang="ar" aria-pressed="false">العربية</button>
     </div>
-    <div class="modal-actions">
-      <button class="translate-btn" id="translateBtn">Traduire les réponses en français</button>
-      <button class="delete-btn" id="deleteBtn" style="margin-left:8px;">Supprimer cette réponse</button>
-    </div>
-    <div id="modalBody"></div>
+    <button type="button" class="cta" id="robot-next" disabled>Continuer</button>
   </div>
-</div>
+</section>
 
-<script type="module">
-  import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+<!-- ============ ÉCRAN 2 : BIENVENUE PERSONNALISÉE ============ -->
+<section id="screen-welcome" class="screen">
+  <div class="wrap">
+    <div class="bot-avatar-container">
+      <div class="bot-avatar-bg"></div>
+      <div class="volt" aria-hidden="true">
+        <div class="volt-antenna"><span class="volt-antenna-tip"></span><span class="volt-antenna-rod"></span></div>
+        <div class="volt-head3d">
+          <div class="volt-head">
+            <span class="volt-ear volt-ear--l"></span>
+            <span class="volt-ear volt-ear--r"></span>
+            <div class="volt-screen">
+              <div class="volt-eyes"><div class="volt-eye"></div><div class="volt-eye"></div></div>
+              <span class="volt-screen-text">Fabrice</span>
+            </div>
+          </div>
+        </div>
+        <div class="volt-hands"><div class="volt-hand"></div><div class="volt-hand"></div></div>
+        <div class="volt-feet"><div class="volt-foot"></div><div class="volt-foot"></div></div>
+      </div>
+    </div>
+    <div class="bubble" id="welcome-bubble"></div>
+    <button type="button" class="cta" id="welcome-next">Commencer</button>
+  </div>
+</section>
 
-  const SUPABASE_URL = 'https://nujilqlkcarjbjsqmcjv.supabase.co';
-  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im51amlscWxrY2FyamJqc3FtY2p2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQxMjYzNTUsImV4cCI6MjA5OTcwMjM1NX0.e_MnqkgzkuhZUN7nP3gzKjNDexEyxNGG5T5KR7nUbIM';
+<!-- ============ ÉCRAN 3 : CHARGEMENT ============ -->
+<section id="screen-loader" class="screen">
+  <div class="wrap" style="text-align:center;">
+    <div class="loader-pct" id="loader-pct">0</div>
+    <p class="loader-msg" id="loader-msg">Préparation du questionnaire…</p>
+    <div class="loader-track"><div class="loader-fill" id="loader-fill"></div></div>
+  </div>
+</section>
 
-  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+<!-- ============ ÉCRAN 4 : QUESTIONNAIRE ============ -->
+<section id="screen-form" class="screen">
+  <header class="hero-mini">
+    <div class="wrap">
+      <h1 id="form-title">Collaboration avec le département Transit</h1>
+      <p id="form-intro"></p>
+    </div>
+  </header>
+  <div class="progress" id="progress">
+    <div class="wrap">
+      <div class="track" role="progressbar" aria-label="Progression" aria-valuemin="0" aria-valuemax="7" aria-valuenow="0" id="bar"><div class="fill" id="fill"></div></div>
+      <span class="count" id="count">0 / 7</span>
+    </div>
+  </div>
+  <main>
+    <div class="wrap">
+      <form id="form" novalidate autocomplete="off"></form>
+    </div>
+  </main>
+</section>
 
-  const loginBox = document.getElementById('loginBox');
-  const dash = document.getElementById('dash');
+<!-- ============ ÉCRAN 5 : MERCI + PARTAGE ============ -->
+<section id="screen-thanks" class="screen">
+  <div class="wrap">
+    <div class="check-badge" aria-hidden="true">✓</div>
+    <h2 class="thanks-title" id="thanks-title">Merci pour votre participation</h2>
+    <p class="thanks-lead" id="thanks-lead">Vos réponses ont été enregistrées.</p>
+    <div class="share-card">
+      <p id="share-text">Si vous avez deux minutes de plus, partager ce questionnaire à un(e) collègue du même service nous aiderait énormément 🙏</p>
+      <div class="share-actions">
+        <button type="button" class="plain primary" id="share-btn">Partager</button>
+        <button type="button" class="plain secondary" id="copy-link-btn">Copier le lien</button>
+      </div>
+      <p class="status" id="thanks-status"></p>
+    </div>
+  </div>
+</section>
 
-  async function checkSession(){
-    const { data: { session } } = await supabase.auth.getSession();
-    if(session){
-      loginBox.style.display = 'none';
-      dash.classList.add('show');
-      loadData();
-    } else {
-      loginBox.style.display = 'block';
-      dash.classList.remove('show');
-    }
+<script>
+(function () {
+"use strict";
+
+/* ============ CONFIG SUPABASE ============ */
+var SUPABASE_URL = "https://wefuknriznxwzivnogzq.supabase.co";
+var SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndlZnVrbnJpem54d3ppdm5vZ3pxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk4OTIxODgsImV4cCI6MjEwNTQ2ODE4OH0.z_5H3o548ouZ_EZDNKhvPrayyhNxPflE-w5snvdaPE8";
+var sb = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+
+var OTHER_KEY = "__other__";
+
+/* ============ TEXTES UI PAR LANGUE ============ */
+var UI = {
+  fr: {
+    dir: "ltr",
+    botName: "Transo", botRole: "Assistant du questionnaire",
+    botGreeting: "Bonjour ! Avant de commencer, comment puis-je vous appeler ?",
+    listening: "Je vous écoute…",
+    namePlaceholder: "Votre prénom",
+    langQuestion: "Dans quelle langue préférez-vous répondre ?",
+    continue: "Continuer",
+    welcome: function (name) { return (name ? "Ravi de vous rencontrer, " + name + " ! " : "Bonjour ! ") + "Merci d'avance pour vos réponses. Elles seront précieuses pour étudier et améliorer la collaboration avec le département Transit."; },
+    start: "Commencer",
+    loaderMsg: "Préparation du questionnaire…",
+    formTitle: "Collaboration avec le département Transit",
+    formIntro: "Dans le cadre de mon Projet de Fin d'Études en Management Logistique, ce questionnaire recueille l'avis des différents services sur leur collaboration avec le département Transit.",
+    mandatory: "obligatoires",
+    otherLabel: "Autre :",
+    otherPlaceholder: "Précisez",
+    otherRequired: "Précisez votre réponse dans le champ « Autre ».",
+    required: "Choisissez une réponse pour continuer.",
+    submit: "Valider mes réponses",
+    clear: "Tout effacer",
+    clearConfirm: "Confirmer l'effacement",
+    clearedMsg: "Le formulaire a été vidé.",
+    oneLeft: "Il reste une question à compléter.",
+    manyLeft: function (n) { return "Il reste " + n + " questions à compléter."; },
+    thanksTitle: "Merci pour votre participation",
+    thanksLead: "Vos réponses ont été enregistrées.",
+    thanksLeadErr: "Vos réponses n'ont pas pu être envoyées. Réessayez dans un instant.",
+    shareText: "Si vous avez deux minutes de plus, partager ce questionnaire à un(e) collègue du même service nous aiderait énormément 🙏",
+    share: "Partager", copyLink: "Copier le lien",
+    linkCopied: "Lien copié !", shareTitle: "Questionnaire Transit"
+  },
+  en: {
+    dir: "ltr",
+    botName: "Transo", botRole: "Survey assistant",
+    botGreeting: "Hi! Before we start, what should I call you?",
+    listening: "I'm listening…",
+    namePlaceholder: "Your first name",
+    langQuestion: "Which language would you like to answer in?",
+    continue: "Continue",
+    welcome: function (name) { return (name ? "Nice to meet you, " + name + "! " : "Hi! ") + "Thank you in advance for your answers. They will be valuable in evaluating and improving collaboration with the Transit department."; },
+    start: "Start",
+    loaderMsg: "Preparing the survey…",
+    formTitle: "Collaboration with the Transit department",
+    formIntro: "As part of my graduation project in Logistics Management, this survey collects feedback from the different departments on their collaboration with the Transit department.",
+    mandatory: "required",
+    otherLabel: "Other:",
+    otherPlaceholder: "Please specify",
+    otherRequired: "Please specify your answer in the \"Other\" field.",
+    required: "Choose an answer to continue.",
+    submit: "Submit my answers",
+    clear: "Clear all",
+    clearConfirm: "Confirm clearing",
+    clearedMsg: "The form has been cleared.",
+    oneLeft: "One question left to complete.",
+    manyLeft: function (n) { return n + " questions left to complete."; },
+    thanksTitle: "Thank you for participating",
+    thanksLead: "Your answers have been recorded.",
+    thanksLeadErr: "Your answers could not be sent. Please try again in a moment.",
+    shareText: "If you have two more minutes, sharing this survey with a colleague from the same department would help enormously 🙏",
+    share: "Share", copyLink: "Copy link",
+    linkCopied: "Link copied!", shareTitle: "Transit Survey"
+  },
+  ar: {
+    dir: "rtl",
+    botName: "ترانسو", botRole: "مساعد الاستبيان",
+    botGreeting: "مرحبا! قبل أن نبدأ، بماذا أناديك؟",
+    listening: "أنا أستمع…",
+    namePlaceholder: "اسمك الأول",
+    langQuestion: "بأي لغة تفضل الإجابة؟",
+    continue: "متابعة",
+    welcome: function (name) { return (name ? "سعيد بلقائك " + name + "! " : "مرحبا! ") + "شكرا مسبقا على إجاباتكم، ستكون قيمة جدا لدراسة وتحسين التعاون مع قسم الترانزيت."; },
+    start: "ابدأ",
+    loaderMsg: "جاري تحضير الاستبيان…",
+    formTitle: "التعاون مع قسم الترانزيت",
+    formIntro: "في إطار مشروع تخرجي في تدبير اللوجستيك، يهدف هذا الاستبيان إلى جمع آراء مختلف الأقسام حول تعاونها مع قسم الترانزيت.",
+    mandatory: "إلزامي",
+    otherLabel: "أخرى:",
+    otherPlaceholder: "الرجاء التوضيح",
+    otherRequired: "الرجاء توضيح إجابتكم في خانة «أخرى».",
+    required: "اختر إجابة للمتابعة.",
+    submit: "تأكيد إجاباتي",
+    clear: "مسح الكل",
+    clearConfirm: "تأكيد المسح",
+    clearedMsg: "تم مسح الاستمارة.",
+    oneLeft: "بقي سؤال واحد لإكماله.",
+    manyLeft: function (n) { return "بقي " + n + " أسئلة لإكمالها."; },
+    thanksTitle: "شكرا لمشاركتكم",
+    thanksLead: "تم تسجيل إجاباتكم.",
+    thanksLeadErr: "تعذر إرسال إجاباتكم. حاول مرة أخرى بعد قليل.",
+    shareText: "إذا كان لديكم دقيقتان إضافيتان، فإن مشاركة هذا الاستبيان مع زميل من نفس القسم ستساعدنا كثيرا 🙏",
+    share: "مشاركة", copyLink: "نسخ الرابط",
+    linkCopied: "تم نسخ الرابط!", shareTitle: "استبيان الترانزيت"
   }
+};
 
-  document.getElementById('loginBtn').addEventListener('click', async ()=>{
-    const email = document.getElementById('loginEmail').value.trim();
-    const password = document.getElementById('loginPassword').value;
-    const errEl = document.getElementById('loginErr');
-    errEl.style.display = 'none';
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if(error){
-      errEl.textContent = "Connexion refusée : " + error.message;
-      errEl.style.display = 'block';
+/* ============ SECTIONS / QUESTIONS PAR LANGUE ============ */
+function buildSections(lang) {
+  var FREQ = { fr: ["Toujours","Souvent","Parfois","Rarement","Jamais"],
+               en: ["Always","Often","Sometimes","Rarely","Never"],
+               ar: ["دائما","غالبا","أحيانا","نادرا","أبدا"] }[lang];
+  var T = {
+    fr: {
+      sec: ["Identification","Collaboration et communication","Dysfonctionnements et coordination","Amélioration"],
+      q1: ["À quel service appartenez-vous ?", ["Commercial","Exploitation international","Exploitation national","Atelier","Achats","Accueil","Manutention / MEAD","Informatique / IT","Finance / Comptabilité"], "Service"],
+      q2: ["À quelle fréquence votre service collabore-t-il avec le Transit ?", ["Très fréquemment","Fréquemment","Occasionnellement","Rarement"], "Fréquence de collaboration"],
+      q3: ["Comment évaluez-vous globalement la collaboration entre votre service et le Transit ?", ["Très bonne","Bonne","Moyenne","Insuffisante","Très insuffisante"], "Évaluation globale"],
+      q4: ["Les informations transmises par le Transit sont-elles généralement claires et suffisantes ?", FREQ, "Informations claires et suffisantes"],
+      q5: ["Les informations et documents sont-ils transmis dans les délais nécessaires ?", FREQ, "Transmission dans les délais"],
+      q6: ["Rencontrez-vous des difficultés dans vos échanges avec le Transit ?", ["Très souvent","Souvent","Parfois","Rarement","Jamais"], "Difficultés dans les échanges"],
+      q7: ["Quels problèmes rencontrez-vous le plus souvent dans la collaboration avec le Transit ?", ["Retards","Informations transmises tardivement","Documents manquants ou incomplets","Erreurs dans les informations","Difficultés liées au transport / chauffeurs","Problèmes de chargement ou déchargement","Problèmes informatiques","Attente de validation ou d'autorisation","Mauvaise coordination entre services"], "Problèmes rencontrés", "Plusieurs réponses possibles."],
+      q8: ["Ces difficultés ont-elles un impact sur votre propre service ?", ["Oui","Non"], "Impact sur le service"],
+      q9: ["Quels sont les principaux impacts constatés ?", ["Retards dans les opérations","Perte de temps","Surcharge de travail","Baisse de productivité","Augmentation des coûts","Réclamations / insatisfaction des clients","Conflits ou tensions entre services","Immobilisation des ressources","Aucun impact particulier"], "Impacts constatés", "Plusieurs réponses possibles."],
+      q10: ["Un exemple concret de dysfonctionnement avec le service Transit", null, "Exemple de dysfonctionnement", "Facultatif.", "Décrivez brièvement une situation vécue..."],
+      q11: ["Selon vous, quelles seraient les principales améliorations à apporter à la collaboration avec le Transit ?", null, "Améliorations proposées", "Facultatif.", "Vos propositions..."],
+      other: "Autre"
+    },
+    en: {
+      sec: ["Identification","Collaboration and communication","Dysfunctions and coordination","Improvement"],
+      q1: ["Which department do you belong to?", ["Commercial","International Operations","Domestic Operations","Workshop","Purchasing","Reception","Handling / MEAD","IT","Finance / Accounting"], "Department"],
+      q2: ["How often does your department work with Transit?", ["Very frequently","Frequently","Occasionally","Rarely"], "Collaboration frequency"],
+      q3: ["Overall, how would you rate the collaboration between your department and Transit?", ["Very good","Good","Average","Insufficient","Very insufficient"], "Overall rating"],
+      q4: ["Is the information provided by Transit generally clear and sufficient?", FREQ, "Clear and sufficient information"],
+      q5: ["Are information and documents provided within the required timeframes?", FREQ, "On-time transmission"],
+      q6: ["Do you encounter difficulties in your exchanges with Transit?", ["Very often","Often","Sometimes","Rarely","Never"], "Difficulties in exchanges"],
+      q7: ["What problems do you encounter most often in your collaboration with Transit?", ["Delays","Late information","Missing or incomplete documents","Errors in information","Transport / driver issues","Loading / unloading issues","IT issues","Waiting for validation or authorization","Poor coordination between departments"], "Problems encountered", "Multiple answers possible."],
+      q8: ["Do these difficulties impact your own department?", ["Yes","No"], "Impact on department"],
+      q9: ["What are the main impacts observed?", ["Operational delays","Time loss","Work overload","Lower productivity","Increased costs","Client complaints / dissatisfaction","Conflicts or tension between departments","Resource immobilization","No particular impact"], "Impacts observed", "Multiple answers possible."],
+      q10: ["A concrete example of a dysfunction with the Transit department", null, "Example of dysfunction", "Optional.", "Briefly describe a situation you experienced..."],
+      q11: ["In your opinion, what would be the main improvements to make to the collaboration with Transit?", null, "Suggested improvements", "Optional.", "Your suggestions..."],
+      other: "Other"
+    },
+    ar: {
+      sec: ["التعريف","التعاون والتواصل","الاختلالات والتنسيق","التحسين"],
+      q1: ["إلى أي قسم تنتمون؟", ["تجاري","الاستغلال الدولي","الاستغلال الوطني","الورشة","المشتريات","الاستقبال","المناولة / MEAD","المعلوميات","المالية / المحاسبة"], "القسم"],
+      q2: ["ما مدى تكرار تعاون قسمكم مع الترانزيت؟", ["بشكل متكرر جدا","بشكل متكرر","أحيانا","نادرا"], "تكرار التعاون"],
+      q3: ["كيف تقيّمون بشكل عام التعاون بين قسمكم والترانزيت؟", ["جيد جدا","جيد","متوسط","غير كاف","غير كاف إطلاقا"], "التقييم العام"],
+      q4: ["هل المعلومات التي يقدمها قسم الترانزيت واضحة وكافية بشكل عام؟", FREQ, "معلومات واضحة وكافية"],
+      q5: ["هل يتم تسليم المعلومات والوثائق في الآجال المطلوبة؟", FREQ, "التسليم في الآجال"],
+      q6: ["هل تواجهون صعوبات في تبادلاتكم مع الترانزيت؟", ["غالبا جدا","غالبا","أحيانا","نادرا","أبدا"], "صعوبات في التبادلات"],
+      q7: ["ما هي المشاكل التي تواجهونها غالبا في التعاون مع الترانزيت؟", ["تأخيرات","معلومات متأخرة","وثائق ناقصة أو مفقودة","أخطاء في المعلومات","صعوبات متعلقة بالنقل / السائقين","مشاكل في التحميل أو التفريغ","مشاكل معلوماتية","انتظار المصادقة أو الترخيص","تنسيق سيء بين الأقسام"], "المشاكل الملاحظة", "إجابات متعددة ممكنة."],
+      q8: ["هل تؤثر هذه الصعوبات على قسمكم؟", ["نعم","لا"], "التأثير على القسم"],
+      q9: ["ما هي الآثار الرئيسية الملاحظة؟", ["تأخيرات في العمليات","ضياع الوقت","زيادة عبء العمل","انخفاض الإنتاجية","ارتفاع التكاليف","شكاوى / عدم رضا العملاء","نزاعات أو توترات بين الأقسام","تجميد الموارد","لا يوجد أثر معين"], "الآثار الملاحظة", "إجابات متعددة ممكنة."],
+      q10: ["مثال ملموس عن خلل مع قسم الترانزيت", null, "مثال عن خلل", "اختياري.", "صف باختصار وضعية عشتموها..."],
+      q11: ["برأيكم، ما هي أهم التحسينات الواجب إدخالها على التعاون مع الترانزيت؟", null, "التحسينات المقترحة", "اختياري.", "اقتراحاتكم..."],
+      other: "أخرى"
+    }
+  }[lang];
+
+  function mk(id, n, type, req, arr, extra) {
+    var q = { id: id, n: n, type: type, req: !!req, short: arr[2], label: arr[0] };
+    if (arr[1]) q.opts = arr[1];
+    if (extra && extra.scale) q.scale = true;
+    if (extra && extra.other) q.other = true;
+    if (arr[3]) q.hint = arr[3];
+    if (arr[4]) q.placeholder = arr[4];
+    return q;
+  }
+  return [
+    { title: T.sec[0], qs: [
+      mk("q1",1,"radio",true,T.q1,{ other: true }),
+      mk("q2",2,"radio",true,T.q2,{ scale: true })
+    ]},
+    { title: T.sec[1], qs: [
+      mk("q3",3,"radio",true,T.q3,{ scale: true }),
+      mk("q4",4,"radio",true,T.q4,{ scale: true }),
+      mk("q5",5,"radio",true,T.q5,{ scale: true }),
+      mk("q6",6,"radio",true,T.q6,{ scale: true })
+    ]},
+    { title: T.sec[2], qs: [
+      mk("q7",7,"check",false,T.q7,{ other: true }),
+      mk("q8",8,"radio",true,T.q8,{ scale: true }),
+      mk("q9",9,"check",false,T.q9,{ other: true })
+    ]},
+    { title: T.sec[3], qs: [
+      mk("q10",10,"text",false,T.q10,{}),
+      mk("q11",11,"text",false,T.q11,{})
+    ]}
+  ];
+}
+
+/* ============ ÉTAT GLOBAL ============ */
+var participant = { name: "", lang: "fr" };
+var SECTIONS = null, ALL = [], REQUIRED = [], state = {}, u = UI.fr;
+
+/* ============ ÉCRAN ROBOT : choix langue + nom ============ */
+var langRow = document.getElementById("lang-row");
+var nameInput = document.getElementById("participant-name");
+var robotNext = document.getElementById("robot-next");
+
+function applyRobotLangTexts(lang) {
+  var t = UI[lang];
+  document.getElementById("bot-name-label").textContent = t.botName;
+  document.getElementById("bot-role-label").textContent = t.botRole;
+  document.getElementById("bot-bubble").textContent = t.botGreeting;
+  nameInput.placeholder = t.namePlaceholder;
+  document.getElementById("lang-question").textContent = t.langQuestion;
+  robotNext.textContent = t.continue;
+}
+langRow.addEventListener("click", function (e) {
+  var btn = e.target.closest(".lang-btn");
+  if (!btn) return;
+  participant.lang = btn.getAttribute("data-lang");
+  Array.prototype.forEach.call(langRow.querySelectorAll(".lang-btn"), function (b) {
+    b.setAttribute("aria-pressed", String(b === btn));
+  });
+  applyRobotLangTexts(participant.lang);
+});
+var robotEyes = document.getElementById("robot-eyes");
+var robotHead = document.getElementById("robot-head");
+var botBubble = document.getElementById("bot-bubble");
+nameInput.addEventListener("input", function () {
+  robotNext.disabled = nameInput.value.trim().length === 0;
+  var ratio = Math.min(nameInput.value.length / 20, 1);
+  robotEyes.style.setProperty("--pupil-x", ((ratio - 0.5) * 2 * 3) + "px");
+});
+nameInput.addEventListener("focus", function () {
+  robotHead.style.transform = "rotateZ(-3deg)";
+  botBubble.textContent = UI[participant.lang].listening;
+});
+nameInput.addEventListener("blur", function () {
+  robotHead.style.transform = "rotateZ(0deg)";
+  botBubble.textContent = UI[participant.lang].botGreeting;
+});
+robotNext.addEventListener("click", function () {
+  participant.name = nameInput.value.trim();
+  u = UI[participant.lang];
+  document.documentElement.setAttribute("dir", u.dir);
+  document.documentElement.setAttribute("lang", participant.lang);
+  goToWelcome();
+});
+
+/* ============ ÉCRAN BIENVENUE ============ */
+function goToWelcome() {
+  document.getElementById("welcome-bubble").textContent = u.welcome(participant.name);
+  document.getElementById("welcome-next").textContent = u.start;
+  showScreen("screen-welcome");
+}
+document.getElementById("welcome-next").addEventListener("click", runLoader);
+
+/* ============ ÉCRAN CHARGEMENT ============ */
+function runLoader() {
+  document.getElementById("loader-msg").textContent = u.loaderMsg;
+  showScreen("screen-loader");
+  var pctEl = document.getElementById("loader-pct");
+  var fillEl = document.getElementById("loader-fill");
+  var pct = 0;
+  var timer = setInterval(function () {
+    pct += Math.random() * 14 + 6;
+    if (pct >= 100) {
+      pct = 100;
+      pctEl.textContent = "100";
+      fillEl.style.width = "100%";
+      clearInterval(timer);
+      setTimeout(buildAndShowForm, 350);
       return;
     }
-    checkSession();
+    pctEl.textContent = String(Math.floor(pct));
+    fillEl.style.width = pct + "%";
+  }, 130);
+}
+
+/* ============ ÉCRAN QUESTIONNAIRE ============ */
+function showScreen(id) {
+  Array.prototype.forEach.call(document.querySelectorAll(".screen"), function (s) { s.classList.remove("active"); });
+  document.getElementById(id).classList.add("active");
+  window.scrollTo({ top: 0 });
+}
+
+function h(tag, attrs) {
+  var e = document.createElement(tag);
+  attrs = attrs || {};
+  Object.keys(attrs).forEach(function (k) {
+    var v = attrs[k];
+    if (v === false || v == null) return;
+    if (k === "class") e.className = v;
+    else if (k === "text") e.textContent = v;
+    else if (v === true) e.setAttribute(k, "");
+    else e.setAttribute(k, v);
   });
+  for (var i = 2; i < arguments.length; i++) { if (arguments[i] != null) e.append(arguments[i]); }
+  return e;
+}
+function option(q, value, label, isOther) {
+  var input = h("input", { type: q.type === "radio" ? "radio" : "checkbox", name: q.id, value: value });
+  return h("label", { class: "opt " + (q.type === "radio" ? "radio" : "check") },
+    input, h("span", { class: "mark", "aria-hidden": "true" }), h("span", { text: label }));
+}
+function renderQuestion(q) {
+  var labelId = q.id + "-label";
+  var box = h("div", { class: "q", "data-q": q.id, role: "group", "aria-labelledby": labelId });
+  box.append(h("p", { class: "qlabel", id: labelId }, h("span", { class: "qnum", text: q.n + "." }), document.createTextNode(q.label)));
+  if (q.hint) box.append(h("p", { class: "hint", text: q.hint }));
+  if (q.type === "text") {
+    box.append(h("textarea", { name: q.id, placeholder: q.placeholder || "", "aria-labelledby": labelId }));
+  } else {
+    var grid = h("div", { class: "opts" + (q.scale ? " scale" : "") });
+    q.opts.forEach(function (o) { grid.append(option(q, o, o, false)); });
+    if (q.other) grid.append(option(q, OTHER_KEY, u.otherLabel, true));
+    box.append(grid);
+    if (q.other) box.append(h("input", { type: "text", class: "other", name: q.id + "_other", placeholder: u.otherPlaceholder, "aria-label": u.otherPlaceholder, hidden: true }));
+  }
+  box.append(h("p", { class: "err", id: q.id + "-err" }));
+  return box;
+}
 
-  document.getElementById('signoutBtn').addEventListener('click', async ()=>{
-    await supabase.auth.signOut();
-    checkSession();
+var formEl = document.getElementById("form");
+var submitBtn, clearBtn, statusEl;
+
+function buildAndShowForm() {
+  document.documentElement.setAttribute("dir", u.dir);
+  document.getElementById("form-title").textContent = u.formTitle;
+  document.getElementById("form-intro").textContent = u.formIntro;
+
+  SECTIONS = buildSections(participant.lang);
+  ALL = []; SECTIONS.forEach(function (s) { s.qs.forEach(function (q) { ALL.push(q); }); });
+  REQUIRED = ALL.filter(function (q) { return q.req; });
+  state = {};
+
+  formEl.textContent = "";
+  SECTIONS.forEach(function (s) {
+    var sec = h("section", { class: "section" });
+    sec.append(h("h2", { text: s.title }));
+    var card = h("div", { class: "card" });
+    s.qs.forEach(function (q) { card.append(renderQuestion(q)); });
+    sec.append(card);
+    formEl.append(sec);
   });
+  submitBtn = h("button", { type: "submit", class: "plain primary", text: u.submit });
+  clearBtn = h("button", { type: "button", class: "plain ghost", text: u.clear });
+  formEl.append(h("div", { class: "actions" }, submitBtn, clearBtn), h("p", { class: "status", id: "status", role: "status" }));
+  statusEl = document.getElementById("status");
 
-  document.getElementById('refreshBtn').addEventListener('click', async ()=>{
-    const btn = document.getElementById('refreshBtn');
-    const original = btn.textContent;
-    btn.textContent = 'Actualisation…';
-    btn.disabled = true;
-    await loadData();
-    btn.textContent = original;
-    btn.disabled = false;
+  updateProgress();
+  wireFormEvents();
+  showScreen("screen-form");
+}
+
+function collect() {
+  ALL.forEach(function (q) {
+    if (q.type === "radio") {
+      var c = formEl.querySelector('input[name="' + q.id + '"]:checked');
+      state[q.id] = c ? c.value : "";
+    } else if (q.type === "check") {
+      state[q.id] = Array.prototype.map.call(formEl.querySelectorAll('input[name="' + q.id + '"]:checked'), function (i) { return i.value; });
+    } else {
+      state[q.id] = formEl.elements[q.id].value;
+    }
+    if (q.other) state[q.id + "_other"] = formEl.elements[q.id + "_other"].value;
   });
+}
+function hasOther(q) {
+  var v = state[q.id];
+  return q.type === "radio" ? v === OTHER_KEY : (v || []).indexOf(OTHER_KEY) !== -1;
+}
+function syncOther() {
+  ALL.forEach(function (q) { if (q.other) formEl.elements[q.id + "_other"].hidden = !hasOther(q); });
+}
+function isAnswered(q) {
+  var v = state[q.id];
+  if (q.type === "check") return v && v.length > 0;
+  return typeof v === "string" && v.trim() !== "";
+}
+function problem(q) {
+  if (q.req && !isAnswered(q)) return u.required;
+  if (q.other && hasOther(q) && !String(state[q.id + "_other"] || "").trim()) return u.otherRequired;
+  return "";
+}
+function updateProgress() {
+  var done = REQUIRED.filter(isAnswered).length, total = REQUIRED.length;
+  document.getElementById("fill").style.width = (total ? done / total * 100 : 0) + "%";
+  document.getElementById("count").textContent = done + " / " + total + " " + u.mandatory;
+  document.getElementById("bar").setAttribute("aria-valuenow", String(done));
+}
+function clearInvalid(qid) {
+  var box = formEl.querySelector('[data-q="' + qid + '"]');
+  if (box) box.classList.remove("invalid");
+}
+function answerValue(q) {
+  var v = state[q.id];
+  var other = String(state[q.id + "_other"] || "").trim();
+  if (q.type === "radio") { if (!v) return ""; return v === OTHER_KEY ? (other || u.other) : v; }
+  if (q.type === "check") return (v || []).map(function (x) { return x === OTHER_KEY ? (other || u.other) : x; });
+  return String(v || "").trim();
+}
 
-  let currentRows = [];
-
-  async function loadData(){
-    const { data, error } = await supabase
-      .from('transit_responses')
-      .select('*')
-      .order('created_at', { ascending:false });
-
-    if(error){
-      console.error(error);
+var clearArmed = false, clearTimer = null;
+function wireFormEvents() {
+  formEl.addEventListener("input", function (e) {
+    collect(); syncOther(); updateProgress();
+    var box = e.target.closest("[data-q]");
+    if (box) clearInvalid(box.getAttribute("data-q"));
+    statusEl.textContent = ""; statusEl.className = "status";
+  });
+  clearBtn.addEventListener("click", function () {
+    if (!clearArmed) {
+      clearArmed = true; clearBtn.textContent = u.clearConfirm;
+      clearTimer = setTimeout(function () { clearArmed = false; clearBtn.textContent = u.clear; }, 4000);
       return;
     }
-    currentRows = data || [];
-    render();
-  }
-
-  function animateCount(el, target, decimals=0){
-    const start = 0;
-    const duration = 600;
-    const startTime = performance.now();
-    function step(now){
-      const p = Math.min((now-startTime)/duration, 1);
-      const eased = 1 - Math.pow(1-p, 3);
-      const val = start + (target-start)*eased;
-      el.textContent = decimals ? val.toFixed(decimals) : Math.round(val);
-      if(p < 1) requestAnimationFrame(step);
+    clearTimeout(clearTimer); clearArmed = false; clearBtn.textContent = u.clear;
+    formEl.reset(); ALL.forEach(function (q) { clearInvalid(q.id); });
+    collect(); syncOther(); updateProgress();
+    statusEl.className = "status"; statusEl.textContent = u.clearedMsg;
+  });
+  formEl.addEventListener("submit", function (e) {
+    e.preventDefault();
+    collect();
+    var first = null, count = 0;
+    ALL.forEach(function (q) {
+      var box = formEl.querySelector('[data-q="' + q.id + '"]');
+      var msg = problem(q);
+      box.classList.toggle("invalid", !!msg);
+      document.getElementById(q.id + "-err").textContent = msg;
+      if (msg) { count++; if (!first) first = box; }
+    });
+    if (first) {
+      statusEl.className = "status bad";
+      statusEl.textContent = count === 1 ? u.oneLeft : u.manyLeft(count);
+      first.scrollIntoView({ behavior: "smooth", block: "center" });
+      var f = first.querySelector("input, textarea");
+      if (f) f.focus({ preventScroll: true });
+      return;
     }
-    requestAnimationFrame(step);
-  }
+    submitResponses();
+  });
+}
 
-  function render(){
-    animateCount(document.getElementById('statCount'), currentRows.length);
+/* ============ ENVOI SUPABASE ============ */
+async function submitResponses() {
+  submitBtn.disabled = true;
+  var payload = { langue: participant.lang, participant_nom: participant.name || null };
+  ALL.forEach(function (q) { payload[q.id] = answerValue(q); if (q.other) payload[q.id + "_autre"] = String(state[q.id + "_other"] || "").trim() || null; });
 
-    const effVals = currentRows.map(r=>r.efficacite).filter(v=>v!=null && !isNaN(v));
-    if(effVals.length){
-      animateCount(document.getElementById('statEff'), effVals.reduce((a,b)=>a+b,0)/effVals.length, 2);
-    } else {
-      document.getElementById('statEff').textContent = '—';
+  if (sb) {
+    try {
+      var res = await sb.from("transit_reponses").insert(payload);
+      if (res.error) throw res.error;
+      goToThanks(true);
+    } catch (err) {
+      statusEl.className = "status bad";
+      statusEl.textContent = u.thanksLeadErr;
+      submitBtn.disabled = false;
     }
-
-    const sujetCounts = {};
-    currentRows.forEach(r=>{ if(r.sujet_impact){ sujetCounts[r.sujet_impact] = (sujetCounts[r.sujet_impact]||0)+1; } });
-    const sujetEntries = Object.entries(sujetCounts).sort((a,b)=>b[1]-a[1]);
-    document.getElementById('statTop').textContent = sujetEntries.length ? sujetEntries[0][0] : '—';
-
-    const sujetEl = document.getElementById('aggSujetImpact');
-    sujetEl.innerHTML = sujetEntries.length ? sujetEntries.map(([k,v],i)=>{
-      const pct = Math.round((v/currentRows.length)*100);
-      return `<div class="agg-item" style="animation-delay:${i*0.05}s"><span>${k}</span><span class="bar-wrap"><span class="bar" data-pct="${pct}" style="width:0%"></span></span><span>${v}</span></div>`;
-    }).join('') : '<span class="empty-note">Aucune donnée pour l\'instant.</span>';
-
-    const paretoCounts = {};
-    const arrayCols = ['activites','taches_erreurs','periodes_charge','causes_retard','documents_problematiques',
-      'source_erreurs','type_probleme_outil','departements','acteurs_difficiles','problemes_entrepot'];
-    currentRows.forEach(r=>{
-      arrayCols.forEach(c=>{
-        if(Array.isArray(r[c])){ r[c].forEach(v=>{ paretoCounts[v] = (paretoCounts[v]||0)+1; }); }
-      });
-    });
-    const paretoEntries = Object.entries(paretoCounts).sort((a,b)=>b[1]-a[1]).slice(0,10);
-    document.getElementById('paretoList').innerHTML = paretoEntries.length ? paretoEntries.map(([k,v],i)=>
-      `<div class="agg-item" style="animation-delay:${i*0.04}s"><span><strong>${i+1}.</strong> ${k}</span><span>${v}</span></div>`
-    ).join('') : '<span class="empty-note">Aucune donnée pour l\'instant.</span>';
-
-    const tbody = document.getElementById('respTableBody');
-    tbody.innerHTML = currentRows.map((r,i)=>`
-      <tr style="animation-delay:${Math.min(i*0.03,0.6)}s">
-        <td>${new Date(r.created_at).toLocaleString('fr-FR')}</td>
-        <td><span class="lang-badge ${r.lang || 'fr'}">${(r.lang || 'fr').toUpperCase()}</span></td>
-        <td>${r.poste || '—'}</td>
-        <td>${r.anciennete || '—'}</td>
-        <td>${r.sujet_impact || '—'}</td>
-        <td>${r.efficacite ?? '—'}</td>
-        <td>${r.nom || '<em>anonyme</em>'}</td>
-        <td><button class="detail-btn" data-idx="${i}" onclick="openDetail(${i})">Détails</button><button class="delete-btn" data-idx="${i}" onclick="quickDelete('${r.id}')">Suppr.</button></td>
-      </tr>
-    `).join('') || '<tr><td colspan="8" class="empty-note">Aucune réponse pour l\'instant.</td></tr>';
-
-    // trigger bar width transitions after paint
-    requestAnimationFrame(()=>{
-      requestAnimationFrame(()=>{
-        document.querySelectorAll('.bar[data-pct]').forEach(b=>{ b.style.width = b.dataset.pct + '%'; });
-      });
-    });
+  } else {
+    goToThanks(false);
   }
+}
 
-  const FREE_TEXT_FIELDS = [
-    ['poste','Poste'], ['etapes_quotidien','Étapes du travail quotidien'], ['taches_chronophages','Tâches chronophages'],
-    ['taches_automatiser','Activités à automatiser'], ['problemes_import_export','Problèmes import/export'],
-    ['incident_outil','Incident lié aux outils'], ['risque_non_pris_au_serieux','Risque sous-estimé'],
-    ['exemple_dysfonctionnement','Exemple de dysfonctionnement'], ['amelioration_externe','Amélioration relation externe'],
-    ['amelioration_prioritaire','Amélioration prioritaire'], ['un_seul_probleme','Un seul problème à régler'],
-    ['nom','Nom']
-  ];
-  const CHOICE_FIELDS = [
-    ['anciennete','Ancienneté'], ['activites','Activités'], ['taches_erreurs','Tâches à erreurs'], ['periodes_charge','Périodes de charge'],
-    ['etape_blocage','Étape de blocage'], ['causes_retard','Causes de retard'], ['documents_problematiques','Documents problématiques'],
-    ['source_erreurs','Source des erreurs'], ['freq_erreurs','Fréquence erreurs doc.'], ['type_probleme_outil','Type de problème outil'],
-    ['departements','Départements'], ['friction','Point de friction'], ['acteurs_difficiles','Acteurs externes difficiles'],
-    ['problemes_entrepot','Problèmes entrepôt'], ['freq_entrepot','Fréquence problèmes entrepôt'],
-    ['sujet_impact','Sujet à plus fort impact'], ['efficacite','Efficacité (1-5)']
-  ];
-
-  let currentDetailRow = null;
-
-  window.openDetail = function(idx){
-    currentDetailRow = currentRows[idx];
-    const r = currentDetailRow;
-    const lang = r.lang || 'fr';
-
-    let html = `<div class="modal-field"><span class="k">Réf. / Date</span><span class="v">${r.doc_ref || '—'} · ${new Date(r.created_at).toLocaleString('fr-FR')} · langue : ${lang.toUpperCase()}</span></div>`;
-
-    CHOICE_FIELDS.forEach(([key,label])=>{
-      const val = r[key];
-      const display = Array.isArray(val) ? (val.length ? val.join(', ') : '—') : (val ?? '—');
-      html += `<div class="modal-field"><span class="k">${label}</span><span class="v">${display}</span></div>`;
-    });
-
-    FREE_TEXT_FIELDS.forEach(([key,label])=>{
-      const val = (r[key] || '').trim();
-      if(!val) return;
-      html += `<div class="modal-field" data-field="${key}"><span class="k">${label}</span><span class="v">${val}</span><div class="translated" id="tr-${key}"><span class="tag">Traduit automatiquement (FR)</span><span class="txt"></span></div></div>`;
-    });
-
-    document.getElementById('modalBody').innerHTML = html;
-    document.getElementById('translateBtn').style.display = (lang === 'fr') ? 'none' : 'inline-block';
-    document.getElementById('translateBtn').disabled = false;
-    document.getElementById('translateBtn').textContent = 'Traduire les réponses en français';
-    document.getElementById('modalOverlay').classList.add('show');
-  };
-
-  document.getElementById('modalClose').addEventListener('click', ()=>{
-    document.getElementById('modalOverlay').classList.remove('show');
-  });
-  document.getElementById('modalOverlay').addEventListener('click', (e)=>{
-    if(e.target.id === 'modalOverlay') document.getElementById('modalOverlay').classList.remove('show');
-  });
-
-  async function translateText(text, sourceLang){
-    const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${sourceLang}|fr`;
-    const res = await fetch(url);
-    const json = await res.json();
-    return json?.responseData?.translatedText || null;
+/* ============ ÉCRAN MERCI / PARTAGE ============ */
+function goToThanks(ok) {
+  document.getElementById("thanks-title").textContent = u.thanksTitle;
+  document.getElementById("thanks-lead").textContent = ok ? u.thanksLead : u.thanksLeadErr;
+  document.getElementById("share-text").textContent = u.shareText;
+  document.getElementById("share-btn").textContent = u.share;
+  document.getElementById("copy-link-btn").textContent = u.copyLink;
+  showScreen("screen-thanks");
+}
+document.getElementById("share-btn").addEventListener("click", async function () {
+  var url = window.location.href;
+  if (navigator.share) {
+    try { await navigator.share({ title: u.shareTitle, url: url }); } catch (e) {}
+  } else {
+    copyLink();
   }
+});
+document.getElementById("copy-link-btn").addEventListener("click", copyLink);
+function copyLink() {
+  var url = window.location.href;
+  var st = document.getElementById("thanks-status");
+  navigator.clipboard.writeText(url).then(function () {
+    st.textContent = u.linkCopied;
+  }).catch(function () { st.textContent = url; });
+}
 
-  document.getElementById('translateBtn').addEventListener('click', async ()=>{
-    if(!currentDetailRow) return;
-    const lang = currentDetailRow.lang || 'fr';
-    if(lang === 'fr') return;
-    const btn = document.getElementById('translateBtn');
-    btn.disabled = true;
-    btn.textContent = 'Traduction en cours…';
-
-    for(const [key] of FREE_TEXT_FIELDS){
-      const val = (currentDetailRow[key] || '').trim();
-      if(!val) continue;
-      const box = document.getElementById('tr-'+key);
-      if(!box) continue;
-      try{
-        const translated = await translateText(val, lang);
-        if(translated){
-          box.querySelector('.txt').textContent = translated;
-          box.classList.add('show');
-        }
-      } catch(e){
-        console.error('Translation failed for', key, e);
-      }
-    }
-    btn.disabled = false;
-    btn.textContent = 'Traduire les réponses en français';
-  });
-
-  window.quickDelete = async function(id){
-    if(!confirm('Supprimer définitivement cette réponse ? Cette action est irréversible.')) return;
-    const { error } = await supabase.from('transit_responses').delete().eq('id', id);
-    if(error){ alert('Erreur lors de la suppression : ' + error.message); return; }
-    loadData();
-  };
-
-  document.getElementById('deleteBtn').addEventListener('click', async ()=>{
-    if(!currentDetailRow) return;
-    if(!confirm('Supprimer définitivement cette réponse ? Cette action est irréversible.')) return;
-    const { error } = await supabase.from('transit_responses').delete().eq('id', currentDetailRow.id);
-    if(error){ alert('Erreur lors de la suppression : ' + error.message); return; }
-    document.getElementById('modalOverlay').classList.remove('show');
-    loadData();
-  });
-
-  document.getElementById('deleteAllBtn').addEventListener('click', async ()=>{
-    if(!currentRows.length){ return; }
-    const confirm1 = confirm(`Supprimer définitivement les ${currentRows.length} réponse(s) enregistrée(s) ? Cette action est irréversible.`);
-    if(!confirm1) return;
-    const typed = prompt('Tape "SUPPRIMER" pour confirmer.');
-    if(typed !== 'SUPPRIMER') return;
-    const ids = currentRows.map(r=>r.id);
-    const { error } = await supabase.from('transit_responses').delete().in('id', ids);
-    if(error){ alert('Erreur lors de la suppression : ' + error.message); return; }
-    loadData();
-  });
-
-  document.getElementById('exportBtn').addEventListener('click', ()=>{
-    const blob = new Blob([JSON.stringify(currentRows, null, 2)], {type:'application/json'});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a'); a.href = url; a.download = 'diagnostic-transit-reponses.json'; a.click();
-    URL.revokeObjectURL(url);
-  });
-
-  document.getElementById('exportCsvBtn').addEventListener('click', ()=>{
-    if(!currentRows.length) return;
-    const cols = Object.keys(currentRows[0]);
-    const escape = v => {
-      if(v == null) return '';
-      if(Array.isArray(v)) v = v.join('; ');
-      const s = String(v).replace(/"/g,'""');
-      return `"${s}"`;
-    };
-    const csv = [cols.join(',')].concat(
-      currentRows.map(r=>cols.map(c=>escape(r[c])).join(','))
-    ).join('\n');
-    const blob = new Blob([csv], {type:'text/csv'});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a'); a.href = url; a.download = 'diagnostic-transit-reponses.csv'; a.click();
-    URL.revokeObjectURL(url);
-  });
-
-  checkSession();
+/* ============ DÉMARRAGE ============ */
+applyRobotLangTexts("fr");
+})();
 </script>
-
 </body>
 </html>

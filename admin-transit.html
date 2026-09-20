@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Admin — Questionnaire Transit (Lamp & FABRICE)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Source+Sans+3:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<style>
+:root {
+  --bg: #F2F4F8; --surface: #FFFFFF; --ink: #15223A; --muted: #566277; --line: #D3DAE6;
+  --accent: #17766F; --accent-ink: #FFFFFF; --accent-soft: #E0F0EE;
+  --error: #B3261E; --error-soft: #FBE9E7;
+  --hero: #15223A; --hero-ink: #FFFFFF; --hero-muted: #C4CEE0;
+  --display: "Bricolage Grotesque", "Trebuchet MS", "Segoe UI", sans-serif;
+  --body: "Source Sans 3", "Segoe UI", system-ui, -apple-system, Arial, sans-serif;
+  box-sizing: border-box;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { min-height: 100vh; background: #07080a; color: var(--ink); font-family: var(--body); font-size: 16px; line-height: 1.5; -webkit-font-smoothing: antialiased; transition: background-color 0.6s ease; }
+
+/* ---------- LOGIN & SCENE LAMPE ---------- */
+.login-wrap { min-height: 100dvh; display: flex; align-items: center; justify-content: center; padding: 40px 20px; background: #07080a; transition: background 0.6s ease; }
+.scene { display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; width: 100%; max-width: 400px; }
+
+/* Lampe & Cordon */
+.lamp-container { position: relative; display: flex; flex-direction: column; align-items: center; z-index: 10; margin-bottom: 110px; }
+.lamp-shade { width: 150px; height: 75px; background: #e8e6e3; border-radius: 75px 75px 0 0; position: relative; z-index: 2; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+.lamp-glow { position: absolute; top: 70px; width: 340px; height: 450px; background: radial-gradient(ellipse at top, rgba(94, 234, 212, 0.35) 0%, rgba(23, 118, 111, 0) 70%); pointer-events: none; opacity: 0; transition: opacity 0.6s ease; z-index: 1; }
+.lamp-pole { width: 10px; height: 60px; background: #566277; z-index: 1; }
+.lamp-base { width: 110px; height: 12px; background: #e8e6e3; border-radius: 6px; z-index: 2; }
+
+/* Cordon interactif */
+.cord { position: absolute; top: 73px; right: -15px; display: flex; flex-direction: column; align-items: center; cursor: pointer; z-index: 12; padding: 10px; }
+.cord-string { width: 2px; height: 55px; background-color: #aaa; }
+.cord-knob { width: 14px; height: 14px; background-color: #FFB703; border-radius: 50%; box-shadow: 0 0 8px rgba(255,183,3,0.9); }
+
+/* Card Login & Robot complètement MASQUÉS par défaut */
+.login-card { background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.15); border-radius: 24px; padding: 80px 26px 30px; width: 100%; color: var(--hero-ink); position: relative; opacity: 0; filter: blur(12px); pointer-events: none; transform: translateY(15px); transition: opacity 0.6s ease, filter 0.6s ease, transform 0.6s ease, box-shadow 0.6s ease; z-index: 5; }
+
+/* État lorsque la lampe est allumée */
+.login-card.active { opacity: 1; filter: blur(0px); pointer-events: auto; transform: translateY(0); box-shadow: 0 20px 40px rgba(0,0,0,.6), 0 0 30px rgba(23, 118, 111, 0.25); }
+.login-card h2 { font-family: var(--display); font-weight: 700; text-align: center; margin: 0 0 22px; font-size: 1.4rem; }
+.field { margin-bottom: 14px; }
+.field label { display: block; font-size: .82rem; margin-bottom: 6px; opacity: .8; }
+.field input { width: 100%; padding: 12px 14px; border-radius: 10px; border: 1.5px solid rgba(255,255,255,.3); background: rgba(255,255,255,.07); color: var(--hero-ink); font-size: 1rem; font: inherit; outline: none; }
+.field input:focus { border-color: #5EEAD4; }
+.btn-primary { display: block; width: 100%; background: var(--accent); color: var(--accent-ink); font-weight: 700; border: none; padding: 13px; border-radius: 100px; font-size: 1rem; font: inherit; cursor: pointer; margin-top: 10px; }
+.btn-primary:disabled { opacity: .6; cursor: not-allowed; }
+.login-error { color: #ffd7d0; background: rgba(0,0,0,.22); padding: 10px 12px; border-radius: 8px; font-size: .85rem; margin-bottom: 12px; }
+
+/* Robot FABRICE placé sous la lumière */
+.bot-avatar-container { position: absolute; top: -50px; left: 50%; transform: translateX(-50%); width: 150px; height: 138px; display: flex; align-items: flex-end; justify-content: center; }
+.bot-avatar-bg { position: absolute; left: 50%; top: 4px; transform: translateX(-50%); width: 112px; height: 112px; border-radius: 50%; background: var(--accent); opacity: .18; animation: pulse 2s cubic-bezier(.4,0,.6,1) infinite; }
+.fabrice { position: relative; width: 130px; height: 128px; animation: float 3s ease-in-out infinite; }
+.fabrice-antenna { position: absolute; top: 0; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; }
+.fabrice-antenna-tip { width: 9px; height: 9px; background: #FFB703; border-radius: 50%; box-shadow: 0 0 8px #FFB703; animation: pulse-dot 1.6s ease-in-out infinite; }
+.fabrice-antenna-rod { width: 3px; height: 14px; background: var(--surface); }
+.fabrice-head3d { position: absolute; top: 24px; left: 50%; transform: translateX(-50%); perspective: 400px; }
+.fabrice-head { position: relative; width: 92px; height: 64px; background: var(--surface); border-radius: 15px; display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 18px rgba(0,0,0,.28); transition: transform .35s ease; }
+.fabrice-ear { position: absolute; top: 18px; width: 7px; height: 20px; background: var(--surface); border-radius: 4px; }
+.fabrice-ear--l { left: -7px; } .fabrice-ear--r { right: -7px; }
+.fabrice-screen { width: 64px; height: 33px; background: var(--hero); border-radius: 7px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; }
+.fabrice-eyes { display: flex; gap: 7px; }
+.fabrice-eyes.hide .fabrice-eye { height: 2px; background: #ff6b5a; transform: translateY(2px); }
+.fabrice-eyes.hide .fabrice-eye::after { opacity: 0; }
+.fabrice-eye { width: 9px; height: 9px; background: #5EEAD4; border-radius: 50%; position: relative; transition: all .3s ease; }
+.fabrice-eye::after { content: ""; position: absolute; inset: 0; margin: auto; width: 3.5px; height: 3.5px; background: #0F766E; border-radius: 50%; transform: translateX(var(--pupil-x, 0px)); transition: transform .08s linear; }
+.fabrice-screen-text { color: rgba(255,255,255,.35); font-size: 6px; font-weight: 800; letter-spacing: 1.5px; }
+.fabrice-hands { position: absolute; top: 78px; left: 50%; transform: translateX(-50%); width: 118px; display: flex; justify-content: space-between; }
+.fabrice-hand { width: 16px; height: 11px; background: var(--surface); border-radius: 6px 6px 3px 3px; }
+.fabrice-feet { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 100px; display: flex; justify-content: space-between; }
+.fabrice-foot { width: 28px; height: 10px; background: var(--surface); border-radius: 0 0 7px 7px; }
+.bubble-mini { position: absolute; top: -52px; left: 50%; transform: translateX(-50%); background: var(--surface); color: var(--ink); padding: 6px 13px; border-radius: 8px; font-size: 11.5px; font-weight: 700; box-shadow: 0 4px 12px rgba(0,0,0,.2); width: max-content; max-width: 230px; text-align: center; }
+.bubble-mini::after { content: ""; position: absolute; bottom: -6px; left: 50%; transform: translateX(-50%); border-width: 6px 6px 0 6px; border-style: solid; border-color: var(--surface) transparent transparent transparent; }
+
+@keyframes float { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-8px);} }
+@keyframes pulse { 0%,100%{transform:translateX(-50%) scale(1); opacity:.18;} 50%{transform:translateX(-50%) scale(1.15); opacity:.3;} }
+@keyframes pulse-dot { 0%,100%{transform:scale(1); opacity:1;} 50%{transform:scale(1.3); opacity:.7;} }
+
+/* ---------- TOPBAR & DASHBOARD ---------- */
+.topbar { background: var(--hero); color: var(--hero-ink); padding: 18px 22px; position: sticky; top: 0; z-index: 20; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+.topbar-eyebrow { font-size: .68rem; text-transform: uppercase; letter-spacing: .12em; opacity: .7; margin: 0; }
+.topbar h1 { font-family: var(--display); font-weight: 700; font-size: 1.3rem; margin: 2px 0 0; }
+.topbar-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.btn-ghost { background: transparent; border: 1px solid rgba(255,255,255,.35); color: var(--hero-ink); padding: 9px 16px; border-radius: 100px; font-size: .82rem; cursor: pointer; font: inherit; }
+.btn-ghost:hover { background: rgba(255,255,255,.1); }
+.btn-accent { background: var(--accent); border: 1px solid var(--accent); color: var(--accent-ink); padding: 9px 16px; border-radius: 100px; font-size: .82rem; font-weight: 700; cursor: pointer; font: inherit; }
+.live-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #4ADE80; margin-inline-end: 6px; box-shadow: 0 0 0 0 rgba(74,222,128,.6); animation: livepulse 2s infinite; }
+@keyframes livepulse { 0%{box-shadow:0 0 0 0 rgba(74,222,128,.5);} 70%{box-shadow:0 0 0 7px rgba(74,222,128,0);} 100%{box-shadow:0 0 0 0 rgba(74,222,128,0);} }
+
+.content { max-width: 1180px; margin: 0 auto; padding: 24px 18px 70px; }
+.stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 20px; }
+.stat-card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; }
+.stat-num { font-family: var(--display); font-size: 1.7rem; font-weight: 700; color: var(--accent); display: block; }
+.stat-label { font-size: .72rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); font-weight: 600; }
+
+.grid { display: grid; grid-template-columns: 1fr; gap: 14px; margin-bottom: 14px; }
+.grid.cols-2 { grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 18px 20px 20px; }
+.card h3 { font-family: var(--display); font-size: 1.02rem; font-weight: 600; margin: 0 0 4px; }
+.card .sub { font-size: .82rem; color: var(--muted); margin: 0 0 14px; }
+.chart-box { position: relative; height: 240px; }
+.chart-box.tall { height: 300px; }
+
+.likert-card .likert { margin-bottom: 16px; }
+.likert-label { font-size: .88rem; font-weight: 600; margin: 0 0 8px; }
+.likert-bar { display: flex; height: 26px; border-radius: 7px; overflow: hidden; background: var(--line); }
+.likert-seg { height: 100%; display: flex; align-items: center; justify-content: center; font-size: .68rem; font-weight: 700; color: #fff; }
+.likert-legend { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px; font-size: .74rem; color: var(--muted); }
+.likert-legend span { display: inline-flex; align-items: center; gap: 5px; }
+.legend-dot { width: 9px; height: 9px; border-radius: 3px; display: inline-block; }
+
+.quotes-toggle { background: transparent; border: 1.5px solid var(--line); color: var(--ink); padding: 10px 16px; border-radius: 10px; font: inherit; font-weight: 600; cursor: pointer; font-size: .85rem; }
+.quotes-list { margin-top: 14px; display: none; }
+.quotes-list.open { display: block; }
+.quote { background: var(--bg); border-inline-start: 3px solid var(--accent); border-radius: 8px; padding: 12px 14px; margin-bottom: 10px; font-size: .9rem; font-style: italic; color: var(--ink); }
+.quote-meta { display: block; font-style: normal; font-size: .74rem; color: var(--muted); margin-top: 6px; }
+
+.empty-note { text-align: center; color: var(--muted); padding: 50px 20px; font-size: .95rem; }
+.toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--hero); color: var(--hero-ink); padding: 12px 22px; border-radius: 100px; font-size: .85rem; opacity: 0; transition: opacity .25s ease, transform .25s ease; pointer-events: none; z-index: 200; }
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+[hidden] { display: none !important; }
+</style>
+</head>
+<body>
+
+<!-- ============ LOGIN ============ -->
+<div id="login-wrap" class="login-wrap">
+  <div class="scene">
+
+    <!-- Lampe & Cordon -->
+    <div class="lamp-container">
+      <div class="lamp-shade"></div>
+      <div class="lamp-glow" id="lampGlow"></div>
+      <div class="lamp-pole"></div>
+      <div class="lamp-base"></div>
+      <div class="cord" id="cord">
+        <div class="cord-string"></div>
+        <div class="cord-knob"></div>
+      </div>
+    </div>
+
+    <!-- Carte de connexion & Robot cachés par défaut -->
+    <div class="login-card" id="loginCard">
+      <div class="bot-avatar-container">
+        <div class="bubble-mini" id="bubble">Bonjour ! Je suis FABRICE.</div>
+        <div class="bot-avatar-bg"></div>
+        <div class="fabrice" aria-hidden="true">
+          <div class="fabrice-antenna"><span class="fabrice-antenna-tip"></span><span class="fabrice-antenna-rod"></span></div>
+          <div class="fabrice-head3d">
+            <div class="fabrice-head" id="robot-head">
+              <span class="fabrice-ear fabrice-ear--l"></span><span class="fabrice-ear fabrice-ear--r"></span>
+              <div class="fabrice-screen">
+                <div class="fabrice-eyes" id="robot-eyes"><div class="fabrice-eye"></div><div class="fabrice-eye"></div></div>
+                <span class="fabrice-screen-text">FABRICE</span>
+              </div>
+            </div>
+          </div>
+          <div class="fabrice-hands"><div class="fabrice-hand"></div><div class="fabrice-hand"></div></div>
+          <div class="fabrice-feet"><div class="fabrice-foot"></div><div class="fabrice-foot"></div></div>
+        </div>
+      </div>
+
+      <h2>Dashboard — Transit</h2>
+      <p class="login-error" id="login-error" hidden></p>
+      <form id="login-form">
+        <div class="field"><label for="email">Email</label><input type="email" id="email" required autocomplete="email"></div>
+        <div class="field"><label for="password">Mot de passe</label><input type="password" id="password" required autocomplete="current-password"></div>
+        <button type="submit" class="btn-primary" id="login-btn">Se connecter</button>
+      </form>
+    </div>
+
+  </div>
+</div>
+
+<!-- ============ DASHBOARD ============ -->
+<div id="dashboard" hidden>
+  <div class="topbar">
+    <div>
+      <p class="topbar-eyebrow">PFE — Diagnostic Transit / FTA Logistics</p>
+      <h1>Résultats du questionnaire</h1>
+    </div>
+    <div class="topbar-actions">
+      <button class="btn-ghost" id="refresh-btn"><span class="live-dot"></span>Temps réel actif</button>
+      <button class="btn-accent" id="export-btn">Exporter pour ma présentation</button>
+      <button class="btn-ghost" id="logout-btn">Se déconnecter</button>
+    </div>
+  </div>
+
+  <div class="content" id="pdf-root">
+    <div class="stats-row">
+      <div class="stat-card"><span class="stat-num" id="stat-total">--</span><span class="stat-label">Réponses</span></div>
+      <div class="stat-card"><span class="stat-num" id="stat-week">--</span><span class="stat-label">7 derniers jours</span></div>
+      <div class="stat-card"><span class="stat-num" id="stat-score">--</span><span class="stat-label">Score collaboration / 5</span></div>
+      <div class="stat-card"><span class="stat-num" id="stat-impact">--</span><span class="stat-label">Signalent un impact</span></div>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <h3>Réponses au fil du temps</h3>
+        <p class="sub">Cumul des participations depuis le lancement</p>
+        <div class="chart-box"><canvas id="chart-time"></canvas></div>
+      </div>
+    </div>
+
+    <div class="grid cols-2">
+      <div class="card">
+        <h3>Répartition par service</h3>
+        <p class="sub">Qui a répondu au questionnaire</p>
+        <div class="chart-box"><canvas id="chart-service"></canvas></div>
+      </div>
+      <div class="card">
+        <h3>Évaluation globale de la collaboration</h3>
+        <p class="sub">Avec le département Transit</p>
+        <div class="chart-box"><canvas id="chart-eval"></canvas></div>
+      </div>
+    </div>
+
+    <div class="grid cols-2">
+      <div class="card">
+        <h3>Fréquence de collaboration</h3>
+        <p class="sub">Avec le Transit, par service</p>
+        <div class="chart-box"><canvas id="chart-freq"></canvas></div>
+      </div>
+      <div class="card">
+        <h3>Impact sur le service</h3>
+        <p class="sub">Les difficultés ont-elles des répercussions ?</p>
+        <div class="chart-box"><canvas id="chart-impact"></canvas></div>
+      </div>
+    </div>
+
+    <div class="grid card likert-card">
+      <h3>Perception détaillée</h3>
+      <p class="sub">Répartition des réponses sur les questions à échelle</p>
+      <div class="likert"><p class="likert-label">Informations claires et suffisantes</p><div class="likert-bar" id="likert-q4"></div></div>
+      <div class="likert"><p class="likert-label">Transmission dans les délais</p><div class="likert-bar" id="likert-q5"></div></div>
+      <div class="likert"><p class="likert-label">Difficultés dans les échanges</p><div class="likert-bar" id="likert-q6"></div></div>
+      <div class="likert-legend" id="likert-legend"></div>
+    </div>
+
+    <div class="grid cols-2">
+      <div class="card">
+        <h3>Problèmes les plus fréquents</h3>
+        <p class="sub">Dans la collaboration avec le Transit</p>
+        <div class="chart-box tall"><canvas id="chart-problems"></canvas></div>
+      </div>
+      <div class="card">
+        <h3>Impacts constatés</h3>
+        <p class="sub">Conséquences observées par les services</p>
+        <div class="chart-box tall"><canvas id="chart-impacts"></canvas></div>
+      </div>
+    </div>
+
+    <div class="grid card">
+      <h3>Retours qualitatifs</h3>
+      <p class="sub" id="quotes-count">0 témoignage libre recueilli</p>
+      <button class="quotes-toggle" id="quotes-toggle">Afficher quelques exemples</button>
+      <div class="quotes-list" id="quotes-list"></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function () {
+"use strict";
+
+var SUPABASE_URL = "https://wefuknriznxwzivnogzq.supabase.co";
+var SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndlZnVrbnJpem54d3ppdm5vZ3pxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk4OTIxODgsImV4cCI6MjEwNTQ2ODE4OH0.z_5H3o548ouZ_EZDNKhvPrayyhNxPflE-w5snvdaPE8";
+var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+var PALETTE = ["#17766F","#2E9E93","#67C3B6","#A9DED2","#D8B24A","#C9682F","#B3241C","#6B7CA0","#3A4F7A"];
+
+var loginWrap = document.getElementById("login-wrap");
+var dashboard = document.getElementById("dashboard");
+var loginForm = document.getElementById("login-form");
+var loginError = document.getElementById("login-error");
+var emailInput = document.getElementById("email");
+var passwordInput = document.getElementById("password");
+var robotHead = document.getElementById("robot-head");
+var robotEyes = document.getElementById("robot-eyes");
+var bubble = document.getElementById("bubble");
+
+var cord = document.getElementById("cord");
+var loginCard = document.getElementById("loginCard");
+var lampGlow = document.getElementById("lampGlow");
+
+var isLampOn = false;
+
+/* ============ INTERACTION LAMPE (GSAP) ============ */
+cord.addEventListener("click", function () {
+  isLampOn = !isLampOn;
+
+  gsap.to(cord, {
+    y: 20,
+    duration: 0.15,
+    yoyo: true,
+    repeat: 1,
+    ease: "power1.inOut"
+  });
+
+  if (isLampOn) {
+    loginCard.classList.add("active");
+    lampGlow.style.opacity = "1";
+    loginWrap.style.backgroundColor = "#15223A";
+    say("Bonjour ! Je suis FABRICE. Je garde ce dashboard.");
+  } else {
+    loginCard.classList.remove("active");
+    lampGlow.style.opacity = "0";
+    loginWrap.style.backgroundColor = "#07080a";
+  }
+});
+
+/* ============ INTERACTION FABRICE ============ */
+function say(t) { bubble.textContent = t; }
+
+emailInput.addEventListener("input", function () {
+  if (!isLampOn) return;
+  var ratio = Math.min(emailInput.value.length / 25, 1);
+  robotEyes.style.setProperty("--pupil-x", ((ratio - 0.5) * 2 * 3) + "px");
+});
+
+emailInput.addEventListener("focus", function () {
+  if (!isLampOn) return;
+  robotHead.style.transform = "rotateZ(-3deg)";
+  say("FABRICE vérifie votre identifiant...");
+});
+
+emailInput.addEventListener("blur", function () {
+  if (!isLampOn) return;
+  robotHead.style.transform = "rotateZ(0deg)";
+  if (document.activeElement !== passwordInput) say("Je veille sur le dashboard.");
+});
+
+passwordInput.addEventListener("focus", function () {
+  if (!isLampOn) return;
+  robotEyes.classList.add("hide");
+  robotHead.style.transform = "rotateY(180deg)";
+  say("Un mot de passe ? FABRICE ne regarde pas. 🙈");
+});
+
+passwordInput.addEventListener("blur", function () {
+  if (!isLampOn) return;
+  robotEyes.classList.remove("hide");
+  robotHead.style.transform = "rotateY(0deg)";
+  say("Je veille sur le dashboard.");
+});
+
+/* ============ AUTHENTIFICATION ============ */
+async function checkSession() {
+  var s = await sb.auth.getSession();
+  if (s.data.session) { showDashboard(); } else { loginWrap.hidden = false; dashboard.hidden = true; }
+}
+
+loginForm.addEventListener("submit", async function (e) {
+  e.preventDefault();
+  if (!isLampOn) return;
+  loginError.hidden = true;
+  var btn = document.getElementById("login-btn");
+  btn.disabled = true; btn.textContent = "Connexion…"; say("FABRICE vérifie vos clés…");
+  try {
+    var res = await sb.auth.signInWithPassword({ email: emailInput.value.trim(), password: passwordInput.value });
+    if (res.error) { loginError.textContent = "Erreur : " + res.error.message; loginError.hidden = false; say("Identifiants incorrects. ❌"); return; }
+    say("Accès autorisé ! Bienvenue. ✅");
+    showDashboard();
+  } catch (err) {
+    loginError.textContent = "Erreur réseau."; loginError.hidden = false;
+  } finally {
+    btn.disabled = false; btn.textContent = "Se connecter";
+  }
+});
+
+document.getElementById("logout-btn").addEventListener("click", async function () {
+  await sb.auth.signOut();
+  loginWrap.hidden = false; dashboard.hidden = true;
+});
+
+/* ============ DASHBOARD & GRAPHES ============ */
+var rows = [];
+var charts = {};
+
+async function showDashboard() {
+  loginWrap.hidden = true; dashboard.hidden = false;
+  await loadData();
+  subscribeRealtime();
+}
+
+async function loadData() {
+  var res = await sb.from("transit_reponses").select("*").order("created_at", { ascending: true });
+  if (res.error) {
+    document.getElementById("pdf-root").innerHTML = '<p class="empty-note">Erreur de chargement : ' + escapeHtml(res.error.message) + '</p>';
+    return;
+  }
+  rows = res.data || [];
+  renderAll();
+}
+
+function subscribeRealtime() {
+  sb.channel("transit_reponses_live")
+    .on("postgres_changes", { event: "INSERT", schema: "public", table: "transit_reponses" }, function () {
+      loadData();
+      showToast("Nouvelle réponse reçue");
+    })
+    .subscribe();
+}
+
+function tally(values) {
+  var m = {};
+  values.forEach(function (v) { if (v) m[v] = (m[v] || 0) + 1; });
+  return m;
+}
+function tallyMulti(arrays) {
+  var m = {};
+  arrays.forEach(function (arr) { (arr || []).forEach(function (v) { if (v) m[v] = (m[v] || 0) + 1; }); });
+  return m;
+}
+function sortedEntries(m) {
+  return Object.keys(m).map(function (k) { return [k, m[k]]; }).sort(function (a, b) { return b[1] - a[1]; });
+}
+function destroy(id) { if (charts[id]) { charts[id].destroy(); delete charts[id]; } }
+
+function renderAll() {
+  var total = rows.length;
+  document.getElementById("stat-total").textContent = total;
+
+  var weekAgo = Date.now() - 7 * 24 * 3600 * 1000;
+  var week = rows.filter(function (r) { return new Date(r.created_at).getTime() >= weekAgo; }).length;
+  document.getElementById("stat-week").textContent = week;
+
+  var scaleMap = { "Très bonne": 5, "Bonne": 4, "Moyenne": 3, "Insuffisante": 2, "Très insuffisante": 1 };
+  var scores = rows.map(function (r) { return scaleMap[r.q3]; }).filter(function (v) { return v; });
+  var avgScore = scores.length ? (scores.reduce(function (a, b) { return a + b; }, 0) / scores.length) : 0;
+  document.getElementById("stat-score").textContent = scores.length ? avgScore.toFixed(1) : "—";
+
+  var impactYes = rows.filter(function (r) { return r.q8 === "Oui"; }).length;
+  var impactTotal = rows.filter(function (r) { return r.q8 === "Oui" || r.q8 === "Non"; }).length;
+  document.getElementById("stat-impact").textContent = impactTotal ? Math.round(impactYes / impactTotal * 100) + "%" : "—";
+
+  if (total === 0) return;
+
+  renderTimeChart();
+  renderBarChart("chart-service", tally(rows.map(function (r) { return r.q1; })));
+  renderPieChart("chart-eval", tally(rows.map(function (r) { return r.q3; })), ["Très bonne","Bonne","Moyenne","Insuffisante","Très insuffisante"]);
+  renderBarChart("chart-freq", tally(rows.map(function (r) { return r.q2; })), ["Très fréquemment","Fréquemment","Occasionnellement","Rarement"]);
+  renderPieChart("chart-impact", tally(rows.map(function (r) { return r.q8; })), ["Oui","Non"]);
+  renderLikert("likert-q4", tally(rows.map(function (r) { return r.q4; })));
+  renderLikert("likert-q5", tally(rows.map(function (r) { return r.q5; })));
+  renderLikert("likert-q6", tally(rows.map(function (r) { return r.q6; })), ["Très souvent","Souvent","Parfois","Rarement","Jamais"]);
+  renderLegend();
+  renderHBar("chart-problems", tallyMulti(rows.map(function (r) { return r.q7; })));
+  renderHBar("chart-impacts", tallyMulti(rows.map(function (r) { return r.q9; })));
+  renderQuotes();
+}
+
+function renderTimeChart() {
+  var byDay = {};
+  rows.forEach(function (r) {
+    var d = new Date(r.created_at).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit" });
+    byDay[d] = (byDay[d] || 0) + 1;
+  });
+  var labels = Object.keys(byDay);
+  var cum = 0, data = labels.map(function (l) { cum += byDay[l]; return cum; });
+  destroy("time");
+  charts.time = new Chart(document.getElementById("chart-time"), {
+    type: "line",
+    data: { labels: labels, datasets: [{ label: "Réponses cumulées", data: data, borderColor: PALETTE[0], backgroundColor: "rgba(23,118,111,.12)", fill: true, tension: .35, pointRadius: 3 }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } }
+  });
+}
+function renderBarChart(id, map, order) {
+  var entries = order ? order.filter(function (k) { return map[k]; }).map(function (k) { return [k, map[k]]; }) : sortedEntries(map);
+  destroy(id);
+  charts[id] = new Chart(document.getElementById(id), {
+    type: "bar",
+    data: { labels: entries.map(function (e) { return e[0]; }), datasets: [{ data: entries.map(function (e) { return e[1]; }), backgroundColor: PALETTE[0], borderRadius: 6, maxBarThickness: 46 }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } }
+  });
+}
+function renderPieChart(id, map, order) {
+  var entries = (order || Object.keys(map)).filter(function (k) { return map[k]; }).map(function (k) { return [k, map[k]]; });
+  destroy(id);
+  charts[id] = new Chart(document.getElementById(id), {
+    type: "doughnut",
+    data: { labels: entries.map(function (e) { return e[0]; }), datasets: [{ data: entries.map(function (e) { return e[1]; }), backgroundColor: PALETTE, borderWidth: 2, borderColor: "#fff" }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: "bottom", labels: { boxWidth: 12, font: { size: 11 } } } } }
+  });
+}
+function renderHBar(id, map) {
+  var entries = sortedEntries(map).slice(0, 9);
+  destroy(id);
+  charts[id] = new Chart(document.getElementById(id), {
+    type: "bar",
+    data: { labels: entries.map(function (e) { return e[0]; }), datasets: [{ data: entries.map(function (e) { return e[1]; }), backgroundColor: PALETTE[1], borderRadius: 6 }] },
+    options: { indexAxis: "y", responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, ticks: { precision: 0 } } } }
+  });
+}
+
+var LIKERT_ORDER = ["Toujours","Souvent","Parfois","Rarement","Jamais"];
+function renderLikert(elId, map, order) {
+  var ord = order || LIKERT_ORDER;
+  var total = ord.reduce(function (s, k) { return s + (map[k] || 0); }, 0);
+  var el = document.getElementById(elId);
+  el.innerHTML = "";
+  if (!total) { el.innerHTML = '<span style="color:var(--muted);font-size:.85rem;">Pas encore de données</span>'; return; }
+  ord.forEach(function (k, i) {
+    var n = map[k] || 0;
+    if (!n) return;
+    var pct = (n / total * 100);
+    var seg = document.createElement("div");
+    seg.className = "likert-seg";
+    seg.style.width = pct + "%";
+    seg.style.background = PALETTE[i % PALETTE.length];
+    seg.textContent = pct >= 8 ? Math.round(pct) + "%" : "";
+    seg.title = k + " : " + n;
+    el.appendChild(seg);
+  });
+}
+function renderLegend() {
+  var el = document.getElementById("likert-legend");
+  el.innerHTML = LIKERT_ORDER.map(function (k, i) {
+    return '<span><span class="legend-dot" style="background:' + PALETTE[i % PALETTE.length] + '"></span>' + k + '</span>';
+  }).join("");
+}
+
+function renderQuotes() {
+  var quotes = [];
+  rows.forEach(function (r) {
+    if (r.q10 && r.q10.trim()) quotes.push({ text: r.q10.trim(), tag: "Dysfonctionnement — " + (r.q1 || "service non précisé") });
+    if (r.q11 && r.q11.trim()) quotes.push({ text: r.q11.trim(), tag: "Amélioration proposée — " + (r.q1 || "service non précisé") });
+  });
+  document.getElementById("quotes-count").textContent = quotes.length + (quotes.length > 1 ? " témoignages libres recueillis" : " témoignage libre recueilli");
+  var list = document.getElementById("quotes-list");
+  list.innerHTML = quotes.slice(0, 8).map(function (q) {
+    return '<div class="quote">' + '“' + escapeHtml(q.text) + '”' + '<span class="quote-meta">' + escapeHtml(q.tag) + '</span></div>';
+  }).join("") || '<p style="color:var(--muted);font-size:.88rem;">Aucun retour libre pour l\u2019instant.</p>';
+}
+
+document.getElementById("quotes-toggle").addEventListener("click", function () {
+  var list = document.getElementById("quotes-list");
+  var open = list.classList.toggle("open");
+  this.textContent = open ? "Masquer" : "Afficher quelques exemples";
+});
+
+document.getElementById("refresh-btn").addEventListener("click", loadData);
+
+/* ============ EXPORT PDF ============ */
+document.getElementById("export-btn").addEventListener("click", async function () {
+  var btn = this;
+  btn.disabled = true; btn.textContent = "Génération…";
+  try {
+    var jsPDFCtor = window.jspdf.jsPDF;
+    var pdf = new jsPDFCtor({ orientation: "landscape", unit: "pt", format: "a4" });
+    var W = pdf.internal.pageSize.getWidth(), H = pdf.internal.pageSize.getHeight();
+
+    pdf.setFillColor(21, 34, 58);
+    pdf.rect(0, 0, W, H, "F");
+    pdf.setTextColor(255,255,255);
+    pdf.setFontSize(26);
+    pdf.text("Collaboration avec le département Transit", W/2, H/2 - 20, { align: "center" });
+    pdf.setFontSize(13);
+    pdf.setTextColor(196,206,224);
+    pdf.text("Résultats du questionnaire — " + rows.length + " réponses — " + new Date().toLocaleDateString("fr-FR"), W/2, H/2 + 12, { align: "center" });
+
+    var chartIds = ["chart-time","chart-service","chart-eval","chart-freq","chart-impact","chart-problems","chart-impacts"];
+    var titles = {
+      "chart-time": "Réponses au fil du temps",
+      "chart-service": "Répartition par service",
+      "chart-eval": "Évaluation globale de la collaboration",
+      "chart-freq": "Fréquence de collaboration",
+      "chart-impact": "Impact sur le service",
+      "chart-problems": "Problèmes les plus fréquents",
+      "chart-impacts": "Impacts constatés"
+    };
+    for (var i = 0; i < chartIds.length; i++) {
+      var id = chartIds[i];
+      if (!charts[id]) continue;
+      pdf.addPage();
+      pdf.setFillColor(255,255,255); pdf.rect(0,0,W,H,"F");
+      pdf.setTextColor(21,34,58); pdf.setFontSize(18);
+      pdf.text(titles[id], 40, 46);
+      var img = charts[id].toBase64Image();
+      pdf.addImage(img, "PNG", 40, 66, W - 80, H - 90, undefined, "FAST");
+    }
+
+    pdf.save("resultats-questionnaire-transit.pdf");
+    showToast("Export généré");
+  } catch (e) {
+    showToast("Erreur lors de l'export");
+  } finally {
+    btn.disabled = false; btn.textContent = "Exporter pour ma présentation";
+  }
+});
+
+function escapeHtml(str) {
+  var div = document.createElement("div");
+  div.textContent = str == null ? "" : str;
+  return div.innerHTML;
+}
+
+var toastTimeout;
+function showToast(msg) {
+  var toast = document.getElementById("toast");
+  toast.textContent = msg; toast.classList.add("show");
+  clearTimeout(toastTimeout);
+  toastTimeout = setTimeout(function () { toast.classList.remove("show"); }, 2600);
+}
+
+checkSession();
+})();
+</script>
+</body>
+</html>

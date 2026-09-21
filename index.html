@@ -63,7 +63,7 @@ html[dir="rtl"] body, [lang="ar"] { font-family: var(--arabic); }
   animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
-/* ---------- Robot "Transo" ---------- */
+/* ---------- Robot "Komla" ---------- */
 .volt { position: relative; width: 130px; height: 128px; animation: float 3s ease-in-out infinite; }
 .volt-antenna { position: absolute; top: 0; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; }
 .volt-antenna-tip { width: 9px; height: 9px; background: #FFB703; border-radius: 50%; box-shadow: 0 0 8px #FFB703; animation: pulse-dot 1.6s ease-in-out infinite; }
@@ -76,7 +76,7 @@ html[dir="rtl"] body, [lang="ar"] { font-family: var(--arabic); }
 .volt-screen { width: 64px; height: 33px; background: var(--hero); border-radius: 7px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; }
 .volt-eyes { display: flex; gap: 7px; }
 .volt-eye { width: 9px; height: 9px; background: #5EEAD4; border-radius: 50%; position: relative; transition: all .3s ease; }
-.volt-eye::after { content: ""; position: absolute; inset: 0; margin: auto; width: 3.5px; height: 3.5px; background: #0F766E; border-radius: 50%; transform: translateX(var(--pupil-x, 0px)); transition: transform .08s linear; }
+.volt-eye::after { content: ""; position: absolute; inset: 0; margin: auto; width: 3.5px; height: 3.5px; background: #0F766E; border-radius: 50%; }
 .volt-screen-text { color: rgba(255,255,255,.35); font-size: 6px; font-weight: 800; letter-spacing: 1.5px; font-family: var(--body); }
 .volt-hands { position: absolute; top: 78px; left: 50%; transform: translateX(-50%); width: 118px; display: flex; justify-content: space-between; }
 .volt-hand { width: 16px; height: 11px; background: var(--surface); border-radius: 6px 6px 3px 3px; }
@@ -118,17 +118,6 @@ html[dir="rtl"] body, [lang="ar"] { font-family: var(--arabic); }
   -webkit-text-fill-color: transparent;
 }
 .bot-role { color: var(--hero-muted); font-size: .95rem; margin: 0 0 24px; font-weight: 500; }
-.name-input {
-  width: 100%; max-width: 340px; font: inherit; font-size: 1.05rem; text-align: center;
-  padding: 14px 18px; border-radius: 14px; border: 1.5px solid var(--line); background: var(--surface); color: var(--ink);
-  margin: 0 auto 20px; display: block;
-  transition: all 0.2s ease;
-}
-.name-input:focus {
-  outline: none;
-  border-color: var(--accent);
-  box-shadow: 0 0 0 4px var(--accent-soft);
-}
 .lang-row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-bottom: 24px; }
 .lang-btn {
   font: inherit; font-weight: 600; padding: 10px 20px; border-radius: 999px; border: 1.5px solid var(--line);
@@ -246,7 +235,7 @@ button.plain { font: inherit; font-weight: 600; cursor: pointer; border-radius: 
             <span class="volt-ear volt-ear--r"></span>
             <div class="volt-screen">
               <div class="volt-eyes" id="robot-eyes"><div class="volt-eye"></div><div class="volt-eye"></div></div>
-              <span class="volt-screen-text">FABRICE</span>
+              <span class="volt-screen-text">KOMLA</span>
             </div>
           </div>
         </div>
@@ -254,21 +243,19 @@ button.plain { font: inherit; font-weight: 600; cursor: pointer; border-radius: 
         <div class="volt-feet"><div class="volt-foot"></div><div class="volt-foot"></div></div>
       </div>
     </div>
-    <p class="bot-name" id="bot-name-label">FABRICE</p>
+    <p class="bot-name" id="bot-name-label">Komla</p>
     <p class="bot-role" id="bot-role-label">Assistant du questionnaire</p>
-    <div class="bubble" id="bot-bubble">Bonjour ! Avant de commencer, comment puis-je vous appeler ?</div>
-    <input class="name-input" id="participant-name" type="text" placeholder="Votre prénom" autocomplete="off" maxlength="60">
-    <p class="bot-role" id="lang-question" style="margin-bottom:12px;">Dans quelle langue préférez-vous répondre ?</p>
+    <div class="bubble" id="bot-bubble">Bonjour ! Dans quelle langue souhaitez-vous répondre ?</div>
     <div class="lang-row" id="lang-row">
       <button type="button" class="lang-btn" data-lang="fr" aria-pressed="true">Français</button>
       <button type="button" class="lang-btn" data-lang="en" aria-pressed="false">English</button>
       <button type="button" class="lang-btn" data-lang="ar" aria-pressed="false">العربية</button>
     </div>
-    <button type="button" class="cta" id="robot-next" disabled>Continuer</button>
+    <button type="button" class="cta" id="robot-next">Continuer</button>
   </div>
 </section>
 
-<!-- ============ ÉCRAN 2 : BIENVENUE PERSONNALISÉE ============ -->
+<!-- ============ ÉCRAN 2 : BIENVENUE ============ -->
 <section id="screen-welcome" class="screen">
   <div class="wrap">
     <div class="bot-avatar-container">
@@ -281,7 +268,7 @@ button.plain { font: inherit; font-weight: 600; cursor: pointer; border-radius: 
             <span class="volt-ear volt-ear--r"></span>
             <div class="volt-screen">
               <div class="volt-eyes"><div class="volt-eye"></div><div class="volt-eye"></div></div>
-              <span class="volt-screen-text">FABRICE</span>
+              <span class="volt-screen-text">KOMLA</span>
             </div>
           </div>
         </div>
@@ -356,13 +343,10 @@ var OTHER_KEY = "__other__";
 var UI = {
   fr: {
     dir: "ltr",
-    botName: "FABRICE", botRole: "Assistant du questionnaire",
-    botGreeting: "Bonjour ! Avant de commencer, comment puis-je vous appeler ?",
-    listening: "Je vous écoute…",
-    namePlaceholder: "Votre prénom",
-    langQuestion: "Dans quelle langue préférez-vous répondre ?",
+    botName: "Komla", botRole: "Assistant du questionnaire",
+    botGreeting: "Bonjour ! Dans quelle langue souhaitez-vous répondre ?",
     continue: "Continuer",
-    welcome: function (name) { return (name ? "Ravi de vous rencontrer, " + name + " ! " : "Bonjour ! ") + "Merci d'avance pour vos réponses. Elles seront précieuses pour étudier et améliorer la collaboration avec le département Transit."; },
+    welcome: "Bonjour ! Merci d'avance pour vos réponses. Elles seront précieuses pour étudier et améliorer la collaboration avec le département Transit.",
     start: "Commencer",
     loaderMsg: "Préparation du questionnaire…",
     formTitle: "Collaboration avec le département Transit",
@@ -387,13 +371,10 @@ var UI = {
   },
   en: {
     dir: "ltr",
-    botName: "FABRICE", botRole: "Survey assistant",
-    botGreeting: "Hi! Before we start, what should I call you?",
-    listening: "I'm listening…",
-    namePlaceholder: "Your first name",
-    langQuestion: "Which language would you like to answer in?",
+    botName: "Komla", botRole: "Survey assistant",
+    botGreeting: "Hi! Which language would you like to answer in?",
     continue: "Continue",
-    welcome: function (name) { return (name ? "Nice to meet you, " + name + "! " : "Hi! ") + "Thank you in advance for your answers. They will be valuable in evaluating and improving collaboration with the Transit department."; },
+    welcome: "Hi! Thank you in advance for your answers. They will be valuable in evaluating and improving collaboration with the Transit department.",
     start: "Start",
     loaderMsg: "Preparing the survey…",
     formTitle: "Collaboration with the Transit department",
@@ -418,13 +399,10 @@ var UI = {
   },
   ar: {
     dir: "rtl",
-    botName: "فابريس", botRole: "مساعد الاستبيان",
-    botGreeting: "مرحبا! قبل أن نبدأ، بماذا أناديك؟",
-    listening: "أنا أستمع…",
-    namePlaceholder: "اسمك الأول",
-    langQuestion: "بأي لغة تفضل الإجابة؟",
+    botName: "كوملا", botRole: "مساعد الاستبيان",
+    botGreeting: "مرحبا! بأي لغة تفضل الإجابة؟",
     continue: "متابعة",
-    welcome: function (name) { return (name ? "سعيد بلقائك " + name + "! " : "مرحبا! ") + "شكرا مسبقا على إجاباتكم، ستكون قيمة جدا لدراسة وتحسين التعاون مع قسم الترانزيت."; },
+    welcome: "مرحبا! شكرا مسبقا على إجاباتكم، ستكون قيمة جدا لدراسة وتحسين التعاون مع قسم الترانزيت.",
     start: "ابدأ",
     loaderMsg: "جاري تحضير الاستبيان…",
     formTitle: "التعاون مع قسم الترانزيت",
@@ -535,12 +513,11 @@ function buildSections(lang) {
 }
 
 /* ============ ÉTAT GLOBAL ============ */
-var participant = { name: "", lang: "fr" };
+var participant = { lang: "fr" };
 var SECTIONS = null, ALL = [], REQUIRED = [], state = {}, u = UI.fr;
 
-/* ============ ÉCRAN ROBOT : choix langue + nom ============ */
+/* ============ ÉCRAN ROBOT : choix de la langue ============ */
 var langRow = document.getElementById("lang-row");
-var nameInput = document.getElementById("participant-name");
 var robotNext = document.getElementById("robot-next");
 
 function applyRobotLangTexts(lang) {
@@ -548,8 +525,6 @@ function applyRobotLangTexts(lang) {
   document.getElementById("bot-name-label").textContent = t.botName;
   document.getElementById("bot-role-label").textContent = t.botRole;
   document.getElementById("bot-bubble").textContent = t.botGreeting;
-  nameInput.placeholder = t.namePlaceholder;
-  document.getElementById("lang-question").textContent = t.langQuestion;
   robotNext.textContent = t.continue;
 }
 langRow.addEventListener("click", function (e) {
@@ -561,24 +536,7 @@ langRow.addEventListener("click", function (e) {
   });
   applyRobotLangTexts(participant.lang);
 });
-var robotEyes = document.getElementById("robot-eyes");
-var robotHead = document.getElementById("robot-head");
-var botBubble = document.getElementById("bot-bubble");
-nameInput.addEventListener("input", function () {
-  robotNext.disabled = nameInput.value.trim().length === 0;
-  var ratio = Math.min(nameInput.value.length / 20, 1);
-  robotEyes.style.setProperty("--pupil-x", ((ratio - 0.5) * 2 * 3) + "px");
-});
-nameInput.addEventListener("focus", function () {
-  robotHead.style.transform = "rotateZ(-3deg)";
-  botBubble.textContent = UI[participant.lang].listening;
-});
-nameInput.addEventListener("blur", function () {
-  robotHead.style.transform = "rotateZ(0deg)";
-  botBubble.textContent = UI[participant.lang].botGreeting;
-});
 robotNext.addEventListener("click", function () {
-  participant.name = nameInput.value.trim();
   u = UI[participant.lang];
   document.documentElement.setAttribute("dir", u.dir);
   document.documentElement.setAttribute("lang", participant.lang);
@@ -587,7 +545,7 @@ robotNext.addEventListener("click", function () {
 
 /* ============ ÉCRAN BIENVENUE ============ */
 function goToWelcome() {
-  document.getElementById("welcome-bubble").textContent = u.welcome(participant.name);
+  document.getElementById("welcome-bubble").textContent = u.welcome;
   document.getElementById("welcome-next").textContent = u.start;
   showScreen("screen-welcome");
 }
@@ -784,7 +742,7 @@ function wireFormEvents() {
 /* ============ ENVOI SUPABASE ============ */
 async function submitResponses() {
   submitBtn.disabled = true;
-  var payload = { langue: participant.lang, participant_nom: participant.name || null };
+  var payload = { langue: participant.lang };
   ALL.forEach(function (q) { payload[q.id] = answerValue(q); if (q.other) payload[q.id + "_autre"] = String(state[q.id + "_other"] || "").trim() || null; });
 
   if (sb) {

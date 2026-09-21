@@ -311,7 +311,7 @@ cord.addEventListener("click", function () {
     loginCard.classList.add("active");
     lampGlow.style.opacity = "1";
     loginWrap.style.backgroundColor = "#15223A";
-    say("Bonjour ! Je suis FABRICE. Je garde ce dashboard.");
+    say("Bonjour ! Je suis Komla. Je garde ce dashboard.");
   } else {
     loginCard.classList.remove("active");
     lampGlow.style.opacity = "0";
@@ -331,7 +331,7 @@ emailInput.addEventListener("input", function () {
 emailInput.addEventListener("focus", function () {
   if (!isLampOn) return;
   robotHead.style.transform = "rotateZ(-3deg)";
-  say("FABRICE vérifie votre identifiant...");
+  say("Komla vérifie votre identifiant...");
 });
 
 emailInput.addEventListener("blur", function () {
@@ -344,7 +344,7 @@ passwordInput.addEventListener("focus", function () {
   if (!isLampOn) return;
   robotEyes.classList.add("hide");
   robotHead.style.transform = "rotateY(180deg)";
-  say("Un mot de passe ? FABRICE ne regarde pas. 🙈");
+  say("Un mot de passe ? Komla ne regarde pas. 🙈");
 });
 
 passwordInput.addEventListener("blur", function () {
@@ -365,7 +365,7 @@ loginForm.addEventListener("submit", async function (e) {
   if (!isLampOn) return;
   loginError.hidden = true;
   var btn = document.getElementById("login-btn");
-  btn.disabled = true; btn.textContent = "Connexion…"; say("FABRICE vérifie vos clés…");
+  btn.disabled = true; btn.textContent = "Connexion…"; say("Komla vérifie vos clés…");
   try {
     var res = await sb.auth.signInWithPassword({ email: emailInput.value.trim(), password: passwordInput.value });
     if (res.error) { loginError.textContent = "Erreur : " + res.error.message; loginError.hidden = false; say("Identifiants incorrects. ❌"); return; }

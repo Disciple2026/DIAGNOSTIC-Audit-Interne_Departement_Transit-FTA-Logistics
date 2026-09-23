@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Admin — Questionnaire Transit (Lamp & FABRICE)</title>
+<title>Admin — Questionnaire Transit</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Source+Sans+3:wght@400;500;600&display=swap" rel="stylesheet">
@@ -150,7 +150,7 @@ body { min-height: 100vh; background: #07080a; color: var(--ink); font-family: v
     <!-- Carte de connexion & Robot cachés par défaut -->
     <div class="login-card" id="loginCard">
       <div class="bot-avatar-container">
-        <div class="bubble-mini" id="bubble">Bonjour ! Je suis FABRICE.</div>
+        <div class="bubble-mini" id="bubble">Bonjour ! Je suis Komla</div>
         <div class="bot-avatar-bg"></div>
         <div class="fabrice" aria-hidden="true">
           <div class="fabrice-antenna"><span class="fabrice-antenna-tip"></span><span class="fabrice-antenna-rod"></span></div>
@@ -159,7 +159,7 @@ body { min-height: 100vh; background: #07080a; color: var(--ink); font-family: v
               <span class="fabrice-ear fabrice-ear--l"></span><span class="fabrice-ear fabrice-ear--r"></span>
               <div class="fabrice-screen">
                 <div class="fabrice-eyes" id="robot-eyes"><div class="fabrice-eye"></div><div class="fabrice-eye"></div></div>
-                <span class="fabrice-screen-text">FABRICE</span>
+                <span class="fabrice-screen-text">Komla</span>
               </div>
             </div>
           </div>
@@ -190,7 +190,7 @@ body { min-height: 100vh; background: #07080a; color: var(--ink); font-family: v
     <div class="topbar-actions">
       <button class="btn-ghost" id="refresh-btn"><span class="live-dot"></span>Temps réel actif</button>
       <button class="btn-ghost" id="export-csv-btn">Exporter CSV</button>
-      <button class="btn-accent" id="export-btn">Exporter pour ma présentation</button>
+      <button class="btn-accent" id="export-btn">Respo ici Exporte les courbes</button>
       <button class="btn-ghost" id="logout-btn">Se déconnecter</button>
     </div>
   </div>
@@ -312,7 +312,7 @@ cord.addEventListener("click", function () {
     loginCard.classList.add("active");
     lampGlow.style.opacity = "1";
     loginWrap.style.backgroundColor = "#15223A";
-    say("Bonjour ! Je suis FABRICE. Je garde ce dashboard.");
+    say("Bonjour ! Je suis Komla. Je garde ce dashboard.");
   } else {
     loginCard.classList.remove("active");
     lampGlow.style.opacity = "0";
@@ -332,7 +332,7 @@ emailInput.addEventListener("input", function () {
 emailInput.addEventListener("focus", function () {
   if (!isLampOn) return;
   robotHead.style.transform = "rotateZ(-3deg)";
-  say("FABRICE vérifie votre identifiant...");
+  say("Komla vérifie votre identifiant...");
 });
 
 emailInput.addEventListener("blur", function () {
@@ -345,7 +345,7 @@ passwordInput.addEventListener("focus", function () {
   if (!isLampOn) return;
   robotEyes.classList.add("hide");
   robotHead.style.transform = "rotateY(180deg)";
-  say("Un mot de passe ? FABRICE ne regarde pas. 🙈");
+  say("Un mot de passe ? Komla ne regarde pas. 🙈");
 });
 
 passwordInput.addEventListener("blur", function () {
@@ -366,7 +366,7 @@ loginForm.addEventListener("submit", async function (e) {
   if (!isLampOn) return;
   loginError.hidden = true;
   var btn = document.getElementById("login-btn");
-  btn.disabled = true; btn.textContent = "Connexion…"; say("FABRICE vérifie vos clés…");
+  btn.disabled = true; btn.textContent = "Connexion…"; say("Komla vérifie vos clés…");
   try {
     var res = await sb.auth.signInWithPassword({ email: emailInput.value.trim(), password: passwordInput.value });
     if (res.error) { loginError.textContent = "Erreur : " + res.error.message; loginError.hidden = false; say("Identifiants incorrects. ❌"); return; }
